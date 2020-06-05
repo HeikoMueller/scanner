@@ -31,6 +31,6 @@ class Scanner {
   }
 
   Stream<dynamic> getDetected() {
-    return _eventChannel.receiveBroadcastStream().cast<Map<dynamic, dynamic>>();
+    return _eventChannel.receiveBroadcastStream().cast<String>();
   }
 }
