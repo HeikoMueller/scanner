@@ -67,15 +67,19 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
     //        "txPowerLevel": advertisementData
     //        "isConnectable": advertisementData.
         ]
-        
-        let serviceUUIDs: [String] = advertisementData["ServiceUUIDs"] as! [String]
-        for serviceUUID in serviceUUIDs {
-            print("Detected serviceUUID : \(serviceUUID)")
+                
+        if(advertisementData["ServiceUUIDs"] != nil) {
+            let serviceUUIDs: [String] = advertisementData["ServiceUUIDs"] as! [String]
+            for serviceUUID in serviceUUIDs {
+                print("Detected serviceUUID : \(serviceUUID)")
+            }
         }
 
-        let hashedSrviceUUIDs: [String] = advertisementData["HashedServiceUUIDs"] as! [String]
-        for hashedServiceUUID in hashedSrviceUUIDs {
-             print("Detected hashedServiceUUID : \(hashedServiceUUID)")
+        if(advertisementData["HashedServiceUUIDs"] != nil) {
+            let hashedSrviceUUIDs: [String] = advertisementData["HashedServiceUUIDs"] as! [String]
+            for hashedServiceUUID in hashedSrviceUUIDs {
+                 print("Detected hashedServiceUUID : \(hashedServiceUUID)")
+            }
         }
         
         for data in advertisementData {
