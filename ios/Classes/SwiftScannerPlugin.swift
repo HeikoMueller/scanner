@@ -64,8 +64,7 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         
         let jsonObject: [String: Any?] = [
             "name": peripheral.name,
-            "rssi": peripheral.readRSSI(),
-            "advertisementDate" : advertisementData
+            "advertisementData" : advertisementData
         ]
         peripherals[peripheral.identifier.uuidString] = jsonObject;
     }
