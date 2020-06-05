@@ -80,7 +80,14 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         didSet {
             print("XCODE PERIPHERALS SET")
             if (self.eventSink != nil) {
-                self.eventSink!(peripherals)
+
+                do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: peripherals, options: .prettyPrinted)
+                    let jsonString = String(data: jsonData, encoding: String.Encoding.ascii)!
+                    self.eventSink!(jsonString)
+                } catch {
+                    print(error.localizedDescription)
+                }
             }
         }
     }
