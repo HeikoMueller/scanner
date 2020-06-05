@@ -63,9 +63,13 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         // put all discoverd peripherals in a dictioniary with identifier as key, defined in Bluetooth Manager
         
         let jsonObject: [String: Any?] = [
-            "name": peripheral.name,
-            "advertisementData" : advertisementData
+            "name": peripheral.name
         ]
+
+        for data in advertisementData {
+            print("\(data.value) is from \(data.key)")
+        }
+        
         peripherals[peripheral.identifier.uuidString] = jsonObject;
     }
     public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
