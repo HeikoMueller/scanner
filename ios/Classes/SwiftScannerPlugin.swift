@@ -63,9 +63,21 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         // put all discoverd peripherals in a dictioniary with identifier as key, defined in Bluetooth Manager
         
         let jsonObject: [String: Any?] = [
-            "name": peripheral.name
+            "name": peripheral.name,
+    //        "txPowerLevel": advertisementData
+    //        "isConnectable": advertisementData.
         ]
+        
+        let serviceUUIDs: [String] = advertisementData["ServiceUUIDs"] as! [String]
+        for serviceUUID in serviceUUIDs {
+            print("Detected serviceUUID : \(serviceUUID)")
+        }
 
+        let hashedSrviceUUIDs: [String] = advertisementData["HashedServiceUUIDs"] as! [String]
+        for hashedServiceUUID in hashedSrviceUUIDs {
+             print("Detected hashedServiceUUID : \(hashedServiceUUID)")
+        }
+        
         for data in advertisementData {
             print("\(data.value) is from \(data.key)")
         }
