@@ -61,7 +61,7 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         print("XCODE : SOMETHING DETECTED");
 
         // put all discoverd peripherals in a dictioniary with identifier as key, defined in Bluetooth Manager
-        peripherals[peripheral.identifier] = peripheral
+        peripherals[peripheral.name!] = peripheral
     }
     public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
         
@@ -76,7 +76,7 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         }
     }
     
-    private(set) var peripherals = Dictionary<UUID, CBPeripheral>() {
+    private(set) var peripherals = Dictionary<String, CBPeripheral>() {
         didSet {
             print("XCODE PERIPHERALS SET")
             if (self.eventSink != nil) {
