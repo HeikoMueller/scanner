@@ -15,7 +15,7 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
                                                   binaryMessenger: registrar.messenger())
         let eventChannel = FlutterEventChannel(name: "roktok.immu.dev/bluetoothScannerResponse",
                                                binaryMessenger: registrar.messenger())
-        eventChannel.setStreamHandler(instance)
+        eventChannel.setStreamHandler(SwiftStreamHandler())
         registrar.addMethodCallDelegate(instance, channel: methodChannel)
     }
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -85,4 +85,19 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         }
     }
  
+}
+
+class SwiftStreamHandler: NSObject, FlutterStreamHandler {
+    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        events(true) // any generic type or more compex dictionary of [String:Any]
+        events(FlutterError(code: "ERROR_CODE",
+                             message: "Detailed message",
+                             details: nil)) // in case of errors
+        events(FlutterEndOfEventStream) // when stream is over
+        return nil
+    }
+
+    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        return nil
+    }
 }
