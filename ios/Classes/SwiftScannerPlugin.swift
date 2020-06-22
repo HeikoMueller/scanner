@@ -2,7 +2,8 @@ import Flutter
 import UIKit
 import CoreBluetooth
 
-public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, CBCentralManagerDelegate {
+public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
+CBCentralManagerDelegate {
     
     // MARK: - Private properties
     private var centralManager: CBCentralManager?
@@ -12,7 +13,7 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = SwiftScannerPlugin()
         let methodChannel = FlutterMethodChannel(name: "roktok.immu.dev/bluetoothScanner",
-                                                  binaryMessenger: registrar.messenger())
+                                                 binaryMessenger: registrar.messenger())
         let eventChannel = FlutterEventChannel(name: "roktok.immu.dev/bluetoothScannerResponse",
                                                binaryMessenger: registrar.messenger())
         eventChannel.setStreamHandler(instance)
@@ -20,15 +21,15 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
     }
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch (call.method) {
-            case "startScanning":
-                startScan(call, result)
-            case "stopScanning":
-                stopScan(call, result)
-            default:
-                result(FlutterMethodNotImplemented)
-      }
-  }
-
+        case "startScanning":
+            startScan(call, result)
+        case "stopScanning":
+            stopScan(call, result)
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+    
     public func onListen(withArguments arguments: Any?,
                          eventSink: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = eventSink
@@ -41,82 +42,168 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
     }
     func stopScan(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         print("XCODE : STOP SCAN CALLED");
-        centralManager?.stopScan()
+        if #available(iOS 9.0, *) {
+            if (centralManager?.isScanning == true) {
+                centralManager?.stopScan()
+            }
+        } else {
+            // Fallback on earlier versions
+            centralManager?.stopScan()
+        }
+        peripherals.removeAll()
         result(nil)
     }
-
+    
     func startScan(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        print("XCODE start scan called")
         let uuids = call.arguments as! Array<String>
+        print("XCODE start scan called with \(String(describing: uuids))")
+        
         self.cbuuids = uuids.map({ (uuid) -> CBUUID in
             return CBUUID(string: uuid);
         })
         // turn scanning on
-        centralManager = CBCentralManager(delegate: self, queue: nil,
-                                          options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
+        centralManager = CBCentralManager(delegate: self, queue: nil,                                           options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
         result(nil)
     }
     
-    public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        print("XCODE : SOMETHING DETECTED");
-
-        // put all discoverd peripherals in a dictioniary with identifier as key, defined in Bluetooth Manager
-        
-        let jsonObject: [String: Any?] = [
-            "name": peripheral.name,
-    //        "txPowerLevel": advertisementData
-    //        "isConnectable": advertisementData.
-        ]
-                
-        if(advertisementData["ServiceUUIDs"] != nil) {
-            let serviceUUIDs: [String] = advertisementData["ServiceUUIDs"] as! [String]
-            for serviceUUID in serviceUUIDs {
-                print("Detected serviceUUID : \(serviceUUID)")
-            }
-        }
-
-        if(advertisementData["HashedServiceUUIDs"] != nil) {
-            let hashedSrviceUUIDs: [String] = advertisementData["HashedServiceUUIDs"] as! [String]
-            for hashedServiceUUID in hashedSrviceUUIDs {
-                 print("Detected hashedServiceUUID : \(hashedServiceUUID)")
-            }
-        }
-        
-        for data in advertisementData {
-            print("\(data.value) is from \(data.key)")
-        }
-        
-        peripherals[peripheral.identifier.uuidString] = jsonObject;
-    }
-    public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
-        
-    }
-
-    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("XCODE centralManagerDidUpdateState")
-        if central.state == .poweredOn {
-            central.scanForPeripherals(withServices: cbuuids)
-        } else {
-            // Error handlling
-        }
+    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        connectedPeripherals.remove(peripheral)
     }
     
-    private(set) var peripherals = Dictionary<String, [String: Any?]>() {
-        didSet {
-            print("XCODE PERIPHERALS SET")
-            if (self.eventSink != nil) {
-
-                do {
-                    let jsonData = try JSONSerialization.data(withJSONObject: peripherals, options: .prettyPrinted)
-                    let jsonString = String(data: jsonData, encoding: String.Encoding.ascii)!
-                    self.eventSink!(jsonString)
-                } catch {
-                    print(error.localizedDescription)
+    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        connectedPeripherals.remove(peripheral)
+    }
+    
+    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        peripheral.discoverServices(nil)
+    }
+    
+    
+    public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        
+        peripheral.delegate = self
+        connectedPeripherals.insert(peripheral)
+        central.connect(peripheral, options: nil)
+        
+        // var detectedServiceUUID: String!;
+        var detectedServiceUUIDS: Array<String>! = [];
+        var isInBackground: Bool = false;
+        
+        // first check for serviceUUIDs in the overflow area
+        if advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] != nil {
+            
+            if let overflowServiceUUIDs: [CBUUID?] = advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey]!  as? [CBUUID?] {
+                for uuid in overflowServiceUUIDs {
+                    if self.cbuuids!.contains(uuid!) {
+                        
+                        detectedServiceUUIDS.append(uuid!.uuidString)
+                        
+                        isInBackground = true
+                    }
                 }
             }
         }
+        
+        // if nothing has been detected yet, check the normal serviceUUIDs
+        if detectedServiceUUIDS.count == 0 {
+            if let serviceUUIDs: [CBUUID?] = advertisementData[CBAdvertisementDataServiceUUIDsKey]  as? [CBUUID?] {
+                for uuid in serviceUUIDs {
+                    if self.cbuuids!.contains(uuid!) {
+                        detectedServiceUUIDS.append(uuid!.uuidString)
+                        isInBackground = false
+                    }
+                }
+            }
+        }
+        
+        if detectedServiceUUIDS.count != 0 {
+            let jsonObject: [String: Any?] = [
+                "id": peripheral.identifier.uuidString,
+                "name": peripheral.name,
+                "rssi": RSSI,
+                "txLevel": advertisementData[CBAdvertisementDataTxPowerLevelKey],
+                "isInBackground" : isInBackground,
+                // "detectedServiceUUIDs" : detectedServiceUUIDS
+            ]
+            
+            peripherals[peripheral.identifier.uuidString] = jsonObject;
+        }
+        
     }
- 
+    
+    public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
+        
+    }
+    
+    open func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        switch central.state {
+        case .poweredOn:
+            // print("XCODE CM State is poweredON")
+            central.scanForPeripherals(withServices: cbuuids, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true, CBCentralManagerScanOptionSolicitedServiceUUIDsKey: cbuuids!])
+        case .poweredOff:
+            // print("XCODE CM State is poweredOFF")
+            central.stopScan()
+        case .unsupported: print("XCODE Unsupported BLE module")
+        default: break
+        }
+    }
+    
+    private(set) var connectedPeripherals = Set<CBPeripheral>()
+    private(set) var peripherals = Dictionary<String, [String: Any?]>()
+}
+
+extension SwiftScannerPlugin: CBPeripheralDelegate {
+    
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        var detectedServiceUUIDs: Array<String> = []
+        for service in peripheral.services ?? [] {
+            if self.cbuuids!.contains(service.uuid) {
+                detectedServiceUUIDs.append(service.uuid.uuidString);
+            }
+        }
+        print(detectedServiceUUIDs);
+        var obj = peripherals[peripheral.identifier.uuidString]
+        
+        obj?["detectedServiceUUIDs"] = detectedServiceUUIDs
+        // send discovered data back to Flutter
+        if (self.eventSink != nil) {
+            do {
+                if(peripherals.count != 0) {
+                    let jsonData = try JSONSerialization.data(withJSONObject: obj!, options: .prettyPrinted)
+                    
+                    let jsonString = String(data: jsonData, encoding: String.Encoding.ascii)!
+                    self.eventSink!(jsonString)
+                    
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    public func peripheral(_ peripheral: CBPeripheral, didModifyServices inInvalidatedServices: [CBService]) {
+        print("XCODE SERVICES MODIFIED")
+        peripheral.discoverServices(nil)
+    }
+    
+    
+    /*
+     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+     guard error == nil else {
+     print("Error discovering characteristics...")
+     return
+     }
+     
+     guard let characteristics = service.characteristics, !characteristics.isEmpty else {
+     print("No characteristics found for service...")
+     return
+     }
+     
+     for characteristic in service.characteristics ?? [] {
+     // Subscribe to characteristic changes, etc...
+     }
+     }
+     */
 }
 
 
