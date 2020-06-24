@@ -58,7 +58,9 @@ CBCentralManagerDelegate {
     }
     
     func startScan(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        let uuids = call.arguments as! Array<String>
+        // let uuids = call.arguments as! Array<String>
+        let map = call.arguments as? Dictionary<String, Any>
+        let uuids = map?["uuids"] as! Array<String>
         print("XCODE start scan called with \(String(describing: uuids))")
         
         self.cbuuids = uuids.map({ (uuid) -> CBUUID in
