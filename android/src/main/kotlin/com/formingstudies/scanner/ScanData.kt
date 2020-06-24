@@ -1,5 +1,5 @@
 package com.formingstudies.scanner
 
-class ScanData(
-    val uuids: List<String>
+class Data(
+    val uuids: List<String>?
 )

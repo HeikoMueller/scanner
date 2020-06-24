@@ -67,14 +67,14 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   }
 
   private fun startScanning(call: MethodCall, result: MethodChannel.Result) {
-    if (call.arguments !is Array<String>) {
-      throw IllegalArgumentException("Arguments are not an Array of UUID-Strings " + call.arguments)
+    if (call.arguments !is Map<*, *>) {
+      throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
-    val scanData = ScanData(
-      call.arguments as List<String>?
+    val arguments = call.arguments as Map<String, Any>
+    val scanData = Data(
+      arguments["uuids"] as List<String>?  
     )
-
-    scanner!!.start(call.arguments)
+    scanner!!.start(scanData)
     result.success(null)
   }
 

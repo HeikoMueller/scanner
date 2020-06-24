@@ -23,8 +23,8 @@ class Scanner {
   final MethodChannel _methodChannel;
   final EventChannel _eventChannel;
 
-  Future<void> startScanning({@required List<String> uuids}) async {
-    await _methodChannel.invokeMethod('startScanning', uuids);
+  Future<void> startScanning({@required Map<String, dynamic> data}) async {
+    await _methodChannel.invokeMethod('startScanning', data);
   }
   Future<void> stopScanning() async {
     await _methodChannel.invokeMethod('stopScanning');
