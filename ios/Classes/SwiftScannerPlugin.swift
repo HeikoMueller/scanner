@@ -1,3 +1,6 @@
+// https://developer.apple.com/forums/thread/104065
+// https://medium.com/@shu223/core-bluetooth-snippets-with-swift-9be8524600b2
+
 import Flutter
 import UIKit
 import CoreBluetooth
@@ -81,10 +84,13 @@ CBCentralManagerDelegate {
     
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         
-        peripheral.delegate = self
-        connectedPeripherals.insert(peripheral)
-        central.connect(peripheral, options: nil)
+        if(peripheral.state == CBPeripheralState.disconnected) {
+            peripheral.delegate = self
+            connectedPeripherals.insert(peripheral)
+            central.connect(peripheral, options: nil)
+        }
         
+        /*
         // var detectedServiceUUID: String!;
         var detectedServiceUUIDS: Array<String>! = [];
         var isInBackground: Bool = false;
@@ -128,6 +134,7 @@ CBCentralManagerDelegate {
             
             peripherals[peripheral.identifier.uuidString] = jsonObject;
         }
+         */
         
     }
     
@@ -161,11 +168,12 @@ extension SwiftScannerPlugin: CBPeripheralDelegate {
                 detectedServiceUUIDs.append(service.uuid.uuidString);
             }
         }
-        print(detectedServiceUUIDs);
         var obj = peripherals[peripheral.identifier.uuidString]
-        
         obj?["detectedServiceUUIDs"] = detectedServiceUUIDs
+        print("XCODE Service detected :")
+        print(detectedServiceUUIDs);
         // send discovered data back to Flutter
+        /*
         if (self.eventSink != nil) {
             do {
                 if(peripherals.count != 0) {
@@ -179,12 +187,15 @@ extension SwiftScannerPlugin: CBPeripheralDelegate {
                 print(error.localizedDescription)
             }
         }
+        */
     }
     
-    public func peripheral(_ peripheral: CBPeripheral, didModifyServices inInvalidatedServices: [CBService]) {
-        print("XCODE SERVICES MODIFIED")
-        peripheral.discoverServices(nil)
+    public func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+      print("Peripheral services changed...")
+      peripheral.discoverServices(nil)
     }
+    
+    
     
     
     /*
@@ -205,5 +216,3 @@ extension SwiftScannerPlugin: CBPeripheralDelegate {
      }
      */
 }
-
-
