@@ -8,7 +8,6 @@ package com.formingstudies.scanner
 
 import android.bluetooth.le.BluetoothLeScanner
 
-
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
@@ -24,6 +23,7 @@ import android.bluetooth.BluetoothGattServer
 
 class Scanner {
 
+    private val tag = "Scanner"
     private var mBluetoothLeScanner: BluetoothLeScanner? = null
 
 

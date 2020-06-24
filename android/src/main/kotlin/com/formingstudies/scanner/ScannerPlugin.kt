@@ -11,7 +11,7 @@ import io.flutter.Log
 /** ScannerPlugin */
 class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
 
-  private val tag = "Scanner"
+  private val tag = "ScannerPlugin"
   private var applicationContext: Context? = null
   private var methodChannel: MethodChannel? = null
   private var eventChannel: EventChannel? = null
