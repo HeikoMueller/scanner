@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
+import 'data.dart';
+
 class Scanner {
 
   factory Scanner() {
@@ -23,7 +25,7 @@ class Scanner {
   final MethodChannel _methodChannel;
   final EventChannel _eventChannel;
 
-  Future<void> startScanning({@required Map<String, dynamic> data}) async {
+  Future<void> startScanning({@required ScanData data}) async {
     await _methodChannel.invokeMethod('startScanning', data);
   }
   Future<void> stopScanning() async {

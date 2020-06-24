@@ -1,0 +1,3 @@
+class ScanData {
+  List uuids;
+}
