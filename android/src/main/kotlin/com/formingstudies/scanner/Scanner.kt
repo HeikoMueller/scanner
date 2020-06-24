@@ -24,7 +24,7 @@ import android.bluetooth.BluetoothGattServer
 
 class Scanner {
 
-    private var mBluetoothLeScanner: BluetoothLeScanner = null
+    private var mBluetoothLeScanner: BluetoothLeScanner? = null
 
 
     fun init(context: Context) {

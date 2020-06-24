@@ -1,63 +1,62 @@
 package com.formingstudies.scanner
 
-import androidx.annotation.NonNull;
-
+import android.R.bool
+import android.content.Context
+import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
+import io.flutter.plugin.common.*
+import io.flutter.Log
 
-import io.flutter.plugin.common.FlutterEventChannel
 
 /** ScannerPlugin */
-public class ScannerPlugin: FlutterPlugin, MethodCallHandler {
-  /// The MethodChannel that will the communication between Flutter and native Android
-  ///
-  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-  /// when the Flutter Engine is detached from the Activity
-  private lateinit var channel : MethodChannel
-  private lateinit var eventChannel : FlutterEventChannel
+class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
 
+  private val tag = "Scanner"
+  private var applicationContext: Context? = null
+  private var methodChannel: MethodChannel? = null
+  private var eventChannel: EventChannel? = null
   private var scanner: Scanner? = null
+  private var eventSink: EventChannel.EventSink? = null
 
-
-  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "roktok.immu.dev/bluetoothScanner")
-    channel.setMethodCallHandler(this);
-    eventChannel = FlutterEventChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "roktok.immu.dev/bluetoothScannerResponse")
-    eventChannel.setMethodCallHandler(this);
-    scanner = Scanner()
-    scanner!!.init(applicationContext)
-
-  }
-
-  // This static function is optional and equivalent to onAttachedToEngine. It supports the old
-  // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
-  // plugin registration via this function while apps migrate to use the new Android APIs
-  // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
-  //
-  // It is encouraged to share logic between onAttachedToEngine and registerWith to keep
-  // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
-  // depending on the user's project. onAttachedToEngine or registerWith must both be defined
-  // in the same class.
+  /** Plugin registration embedding v1 */
   companion object {
     @JvmStatic
-    fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "roktok.immu.dev/bluetoothScanner")
-      channel.setMethodCallHandler(ScannerPlugin())
-      val eventChannel = MethodChannel(registrar.messenger(), "roktok.immu.dev/bluetoothScannerResponse")
-      eventChannel.setMethodCallHandler(ScannerPlugin())
+    fun registerWith(registrar: PluginRegistry.Registrar) {
+      ScannerPlugin().onAttachedToEngine(registrar.context(), registrar.messenger())
     }
   }
 
-  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+  /** Plugin registration embedding v2 */
+  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    onAttachedToEngine(flutterPluginBinding.applicationContext, flutterPluginBinding.binaryMessenger)
+  }
+
+  private fun onAttachedToEngine(applicationContext: Context, messenger: BinaryMessenger) {
+    this.applicationContext = applicationContext
+    methodChannel = MethodChannel(messenger, "roktok.immu.dev/bluetoothScanner")
+    eventChannel = EventChannel(messenger, "roktok.immu.dev/bluetoothScannerResponse")
+    methodChannel!!.setMethodCallHandler(this);
+    eventChannel!!.setStreamHandler(this)
+    // eventChannel.setMethodCallHandler(this);
+    scanner = Scanner()
+    scanner!!.init(applicationContext)
+  }
+
+  override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    applicationContext = null
+    methodChannel!!.setMethodCallHandler(null)
+    methodChannel = null
+    eventChannel!!.setStreamHandler(null)
+    eventChannel = null
+    scanner = null
+  }
+
+  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "startScanning") {
       Log.i(tag, "ANDROID startScanning called")
-      startScanning(result)
+      startScanning(call, result)
     } else if (call.method == "stopScanning") {
       Log.i(tag, "ANDROID stopScanning called")
       stopScanning(result)
@@ -67,12 +66,10 @@ public class ScannerPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
-    channel.setMethodCallHandler(null)
-    eventChannel.setMethodCallHandler(null)
-  }
-
-  private fun startScanning(result: MethodChannel.Result) {
+  private fun startScanning(call: MethodCall, result: MethodChannel.Result) {
+    if (call.arguments !is Map<*, *>) {
+      throw IllegalArgumentException("Arguments are not a map! " + call.arguments)
+    }
     scanner!!.start()
     result.success(null)
   }
@@ -82,4 +79,12 @@ public class ScannerPlugin: FlutterPlugin, MethodCallHandler {
     result.success(null)
   }
 
+  // TODO: Fix listeners
+  override fun onListen(event: Any?, eventSink: EventChannel.EventSink) {
+    this.eventSink = eventSink
+  }
+
+  override fun onCancel(event: Any?) {
+    this.eventSink = null
+  }
 }
