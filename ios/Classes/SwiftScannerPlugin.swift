@@ -54,6 +54,11 @@ CBCentralManagerDelegate {
             centralManager?.stopScan()
         }
         peripherals.removeAll()
+        // now disconnect
+        for peripheral in connectedPeripherals {
+            disconnect(peripheral: peripheral);
+        }
+        
         result(nil)
     }
     
@@ -69,6 +74,9 @@ CBCentralManagerDelegate {
         // turn scanning on
         centralManager = CBCentralManager(delegate: self, queue: nil,                                           options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
         result(nil)
+    }
+    public func disconnect(peripheral: CBPeripheral) {
+        centralManager?.cancelPeripheralConnection(peripheral)
     }
     
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
@@ -174,6 +182,7 @@ extension SwiftScannerPlugin: CBPeripheralDelegate {
         obj?["detectedServiceUUIDs"] = detectedServiceUUIDs
         print("XCODE Service detected :")
         print(detectedServiceUUIDs);
+        
         // send discovered data back to Flutter
         /*
         if (self.eventSink != nil) {
