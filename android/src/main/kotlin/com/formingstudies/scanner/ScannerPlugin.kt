@@ -19,7 +19,6 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   private var scanner: Scanner? = null
   private var advertiser: Advertiser? = null
 
-
   /** Plugin registration embedding v1 */
   companion object {
     @JvmStatic
@@ -39,8 +38,10 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     methodChannel!!.setMethodCallHandler(this);
     eventChannel = EventChannel(messenger, "roktok.immu.dev/bluetoothScannerResponse")
     eventChannel!!.setStreamHandler(this)
-    scanner = Scanner().init(applicationContext)
-    advertiser = Advertiser().init(applicationContext)
+    advertiser = Advertiser()
+    advertiser!!.init()
+    scanner = Scanner()
+    scanner!!.init()
    }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -48,10 +49,8 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     methodChannel!!.setMethodCallHandler(null)
     methodChannel = null
     eventChannel!!.setStreamHandler(null)
-    advertiser = Advertiser()
-    advertiser!!.init()
-    scanner = Scanner()
-    scanner!!.init()
+    advertiser = null
+    scanner = null
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
@@ -82,9 +81,6 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     val advertiseData = Data(
       arguments["uuids"] as List<String>?  
     )
-    if(advertisser == null) {
-      Log.e(TAG, "ADVERTISER IS NULL !!");
-    }
     try {
       advertiser!!.start(advertiseData)
     } catch(err: Exception) {
