@@ -166,7 +166,7 @@ class Advertiser {
         val uuid = data.uuids!!.first()    
         val dataBuilder = AdvertiseData.Builder()
             .addServiceUuid(ParcelUuid.fromString(uuid!!))
-            .setIncludeTxPowerLevel(it)
+//            .setIncludeTxPowerLevel(it)
         /*
         dataBuilder.addServiceUuid(ParcelUuid.fromString(data.uuid))
         data.serviceDataUuid?.let { dataBuilder.addServiceData(ParcelUuid.fromString(it), serviceData) }
