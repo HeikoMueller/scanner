@@ -163,9 +163,9 @@ class Advertiser {
          */
         // val serviceData = data.serviceData?.let { intArrayToByteArray(it) }
         // val manufacturerData = data.manufacturerData?.let { intArrayToByteArray(it) }
-        val uuid = data.uuids.first()    
+        val uuid = data.uuids!!.first()    
         val dataBuilder = AdvertiseData.Builder()
-            .addServiceUuid(ParcelUuid.fromString(uuid))
+            .addServiceUuid(ParcelUuid.fromString(uuid!!))
             .setIncludeTxPowerLevel(it)
         /*
         dataBuilder.addServiceUuid(ParcelUuid.fromString(data.uuid))
