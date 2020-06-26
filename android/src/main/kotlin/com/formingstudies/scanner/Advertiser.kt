@@ -110,7 +110,8 @@ class Advertiser {
         }
         if (mBluetoothGattServer == null) {
             mBluetoothGattServer = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).openGattServer(context, mGattServerCallback)
-        }        
+        }   
+        return this     
     }
     
     fun start(data: Data) {

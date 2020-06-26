@@ -39,10 +39,8 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     methodChannel!!.setMethodCallHandler(this);
     eventChannel = EventChannel(messenger, "roktok.immu.dev/bluetoothScannerResponse")
     eventChannel!!.setStreamHandler(this)
-    scanner = Scanner()
-    scanner!!.init(applicationContext)
-    advertiser = Advertiser()
-    advertiser!!.init(applicationContext)
+    scanner = Scanner().init(applicationContext)
+    advertiser = Advertiser().init(applicationContext)
    }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
