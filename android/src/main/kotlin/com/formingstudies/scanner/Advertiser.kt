@@ -117,11 +117,14 @@ class Advertiser {
 
         val settings = buildAdvertiseSettings()
         val advertiseData = buildAdvertiseData(data)
-        // val service = buildService(data)
-        // if(data.removeAllServices!!) {
-        //    mBluetoothGattServer!!.clearServices()
-        // }
-        // mBluetoothGattServer!!.addService(service)
+
+        // first remove all services
+        mBluetoothGattServer!!.clearServices()
+        for(uuidString in data.uuids) {
+            val service = buildService(uuidString)
+            mBluetoothGattServer!!.addService(service)
+        }
+
         if(!isAdvertising) {
             mBluetoothLeAdvertiser!!.startAdvertising(settings, advertiseData, mAdvertiseCallback)
         }
@@ -142,14 +145,13 @@ class Advertiser {
         advertiseCallback = null
         isAdvertising = false
     }
-    
-    /*
-    private fun buildService(data: Data): BluetoothGattService? {
-        val uuid = ParcelUuid.fromString(data.uuid).uuid
+
+    private fun buildService(uuidString: String): BluetoothGattService? {
+        val uuid = ParcelUuid.fromString(uuidString).uuid
         val type = BluetoothGattService.SERVICE_TYPE_PRIMARY
         return BluetoothGattService(uuid, type);
     }
-    */
+
     private fun buildAdvertiseData(data: Data): AdvertiseData? {
         /**
          * Note: There is a strict limit of 31 Bytes on packets sent over BLE Advertisements.
@@ -160,23 +162,28 @@ class Advertiser {
          * onStartFailure() method of an AdvertiseCallback implementation.
          */
         // val serviceData = data.serviceData?.let { intArrayToByteArray(it) }
-        val manufacturerData = data.manufacturerData?.let { intArrayToByteArray(it) }
+        // val manufacturerData = data.manufacturerData?.let { intArrayToByteArray(it) }
+        val uuid = data.uuids.first()    
         val dataBuilder = AdvertiseData.Builder()
+            .addServiceUuid(ParcelUuid.fromString(uuid))
+            .setIncludeTxPowerLevel(it)
         /*
         dataBuilder.addServiceUuid(ParcelUuid.fromString(data.uuid))
         data.serviceDataUuid?.let { dataBuilder.addServiceData(ParcelUuid.fromString(it), serviceData) }
         */
-        data.manufacturerId?.let { dataBuilder.addManufacturerData(it, manufacturerData) }
-        data.includeDeviceName?.let { dataBuilder.setIncludeDeviceName(it) }
-        data.transmissionPowerIncluded?.let { dataBuilder.setIncludeTxPowerLevel(it) }
+        // data.manufacturerId?.let { dataBuilder.addManufacturerData(it, manufacturerData) }
+        // data.includeDeviceName?.let { dataBuilder.setIncludeDeviceName(it) }
+        // data.transmissionPowerIncluded?.let { dataBuilder.setIncludeTxPowerLevel(it) }
         return dataBuilder.build()
     }
 
     /** TODO: make settings configurable */
     private fun buildAdvertiseSettings(): AdvertiseSettings? {
         val settingsBuilder = AdvertiseSettings.Builder()
-        settingsBuilder.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
-        settingsBuilder.setTimeout(0)
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+            .setConnectable(true)
+            .setTimeout(0)
         return settingsBuilder.build()
     }
 
