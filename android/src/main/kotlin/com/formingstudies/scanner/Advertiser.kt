@@ -159,7 +159,7 @@ class Advertiser {
          * AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE. Catch this error in the
          * onStartFailure() method of an AdvertiseCallback implementation.
          */
-        val serviceData = data.serviceData?.let { intArrayToByteArray(it) }
+        // val serviceData = data.serviceData?.let { intArrayToByteArray(it) }
         val manufacturerData = data.manufacturerData?.let { intArrayToByteArray(it) }
         val dataBuilder = AdvertiseData.Builder()
         /*
