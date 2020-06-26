@@ -20,38 +20,38 @@ class Advertiser {
     private var isAdvertising = false
     private var mBluetoothLeAdvertiser: BluetoothLeAdvertiser? = null
     private var advertiseCallback: AdvertiseCallback? = null
-    private val tag = "BLE ADVERTISER"
+    private val TAG = "BLE ADVERTISER"
     private var mBluetoothGattServer: BluetoothGattServer? = null
     private var context: Context? = null
 
     private val mBluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onServicesDiscovered (gatt: BluetoothGatt , status: Int) {
-            Log.i(tag, "EXTERNAL SEVICE called Connection Did Change")
+            Log.i(TAG, "EXTERNAL SEVICE called Connection Did Change")
             for(service in gatt.services.orEmpty()) {
-                Log.i(tag, "Service discovered " + service.uuid.toString())
+                Log.i(TAG, "Service discovered " + service.uuid.toString())
             }
         }
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            Log.i(tag, "EXTERNAL SEVICE connection did change")
+            Log.i(TAG, "EXTERNAL SEVICE connection did change")
             gatt.discoverServices()
-            // Log.i(tag, gatt.services.toString())
+            // Log.i(TAG, gatt.services.toString())
 
         }
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-            Log.i(tag, "EXTERNAL SEVICE characteristic changed")
+            Log.i(TAG, "EXTERNAL SEVICE characteristic changed")
         }
     }
 
     private val mGattServerCallback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
-            Log.i(tag, "GATT-SERVER CALLBACK called Connection Did Change")
-            Log.i(tag, device?.toString())
-            Log.i(tag, status.toString())
-            Log.i(tag, newState.toString())
+            Log.i(TAG, "GATT-SERVER CALLBACK called Connection Did Change")
+            Log.i(TAG, device?.toString())
+            Log.i(TAG, status.toString())
+            Log.i(TAG, newState.toString())
             try {
                 device?.connectGatt(context,true, mBluetoothGattCallback)
             } catch(err: Exception) {
-                Log.e(tag, err.toString())
+                Log.e(TAG, err.toString())
             }
         }
     }
@@ -59,14 +59,14 @@ class Advertiser {
     private val mAdvertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
             super.onStartSuccess(settingsInEffect)
-            Log.i(tag, "LE Advertise Started.")
+            Log.i(TAG, "LE Advertise Started.")
             //advertisingCallback(true)
             isAdvertising = true
         }
         
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
-            Log.e(tag, "ERROR while starting advertising: $errorCode")
+            Log.e(TAG, "ERROR while starting advertising: $errorCode")
             val statusText: String
 
             when (errorCode) {
@@ -96,7 +96,7 @@ class Advertiser {
                 }
             }
 
-            Log.e(tag, "ERROR while starting advertising: $errorCode - $statusText")
+            Log.e(TAG, "ERROR while starting advertising: $errorCode - $statusText")
             //advertisingCallback(false)
             isAdvertising = false
         }
@@ -113,7 +113,7 @@ class Advertiser {
     }
     
     fun start(data: Data) {
-        // Log.i(tag, "START ADVERTISING " + data.uuid)
+        // Log.i(TAG, "START ADVERTISING " + data.uuid)
 
         val settings = buildAdvertiseSettings()
         val advertiseData = buildAdvertiseData(data)

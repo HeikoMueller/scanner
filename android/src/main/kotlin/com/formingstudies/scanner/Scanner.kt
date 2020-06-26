@@ -30,14 +30,13 @@ import android.os.*
 
 class Scanner {
 
-    private val tag = "BLE SCANNER"
+    private val TAG = "BLE SCANNER"
     private var mBluetoothLeScanner: BluetoothLeScanner? = null
     private var scanCallback: ScanCallback? = null
     private var context: Context? = null
 
 
     // private val apiLevel: Int = android.os.Build.VERSION.SDK_INT
-
 
     fun init(context: Context) {
         this.context = context
@@ -48,15 +47,15 @@ class Scanner {
     
 //    fun start(uuids: Array<String>) {
     fun start(data: Data) {
-        Log.i(tag, "ANDROID SCANNER START")
+        Log.i(TAG, "ANDROID SCANNER START")
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
-            Log.i(tag, "API LEVEL <21")
+            Log.i(TAG, "API LEVEL <21")
             // API Level unter 21
         } else if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
-            Log.i(tag, "API LEVEL <26")
+            Log.i(TAG, "API LEVEL <26")
             // API Level 21
         } else {
-            Log.i(tag, "API LEVEL 26+")
+            Log.i(TAG, "API LEVEL 26+")
             // API Level 26
             val scanFilters = buildScanFilters(data);
             val scanSettings = buildScanSettings();
@@ -65,7 +64,7 @@ class Scanner {
         }
     }
     fun stop() {
-        Log.i(tag, "ANDROID SCANNER STOP")
+        Log.i(TAG, "ANDROID SCANNER STOP")
         scanCallback = null
 
     }
@@ -74,7 +73,7 @@ class Scanner {
 
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result);
-            Log.i(tag, result?.toString());
+            Log.i(TAG, result?.toString());
         }
     }
 
