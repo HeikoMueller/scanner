@@ -121,7 +121,7 @@ class Advertiser {
         // if(data.removeAllServices!!) {
         //    mBluetoothGattServer!!.clearServices()
         // }
-        mBluetoothGattServer!!.addService(service)
+        // mBluetoothGattServer!!.addService(service)
         if(!isAdvertising) {
             mBluetoothLeAdvertiser!!.startAdvertising(settings, advertiseData, mAdvertiseCallback)
         }
