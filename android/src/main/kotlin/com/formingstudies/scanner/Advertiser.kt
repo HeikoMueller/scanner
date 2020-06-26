@@ -120,7 +120,7 @@ class Advertiser {
 
         // first remove all services
         mBluetoothGattServer!!.clearServices()
-        for(uuidString in data.uuids) {
+        for(uuidString in data.uuids!!) {
             val service = buildService(uuidString)
             mBluetoothGattServer!!.addService(service)
         }
