@@ -117,7 +117,7 @@ class Advertiser {
 
         val settings = buildAdvertiseSettings()
         val advertiseData = buildAdvertiseData(data)
-        val service = buildService(data)
+        // val service = buildService(data)
         // if(data.removeAllServices!!) {
         //    mBluetoothGattServer!!.clearServices()
         // }
@@ -143,12 +143,13 @@ class Advertiser {
         isAdvertising = false
     }
     
+    /*
     private fun buildService(data: Data): BluetoothGattService? {
         val uuid = ParcelUuid.fromString(data.uuid).uuid
         val type = BluetoothGattService.SERVICE_TYPE_PRIMARY
         return BluetoothGattService(uuid, type);
     }
-
+    */
     private fun buildAdvertiseData(data: Data): AdvertiseData? {
         /**
          * Note: There is a strict limit of 31 Bytes on packets sent over BLE Advertisements.
@@ -161,8 +162,10 @@ class Advertiser {
         val serviceData = data.serviceData?.let { intArrayToByteArray(it) }
         val manufacturerData = data.manufacturerData?.let { intArrayToByteArray(it) }
         val dataBuilder = AdvertiseData.Builder()
+        /*
         dataBuilder.addServiceUuid(ParcelUuid.fromString(data.uuid))
         data.serviceDataUuid?.let { dataBuilder.addServiceData(ParcelUuid.fromString(it), serviceData) }
+        */
         data.manufacturerId?.let { dataBuilder.addManufacturerData(it, manufacturerData) }
         data.includeDeviceName?.let { dataBuilder.setIncludeDeviceName(it) }
         data.transmissionPowerIncluded?.let { dataBuilder.setIncludeTxPowerLevel(it) }
