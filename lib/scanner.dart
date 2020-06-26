@@ -34,6 +34,15 @@ class Scanner {
   Future<void> stopScanning() async {
     await _methodChannel.invokeMethod('stopScanning');
   }
+  Future<void> startAdvertising({@required List uuids}) async {
+    Map params = <String, dynamic>{
+      "uuids": uuids,
+    };
+    await _methodChannel.invokeMethod('startAdvertising', params);
+  }
+  Future<void> stopAdvertising() async {
+    await _methodChannel.invokeMethod('stopAdvertising');
+  }    
 
   Stream<dynamic> getDetected() {
     return _eventChannel.receiveBroadcastStream().cast<String>();

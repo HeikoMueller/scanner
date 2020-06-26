@@ -10,6 +10,7 @@ CBCentralManagerDelegate {
     
     // MARK: - Private properties
     private var centralManager: CBCentralManager?
+    private var peripheralManager: CBPeripheralManager?
     private var cbuuids: Array<CBUUID>?
     private var eventSink: FlutterEventSink?
     
@@ -28,6 +29,10 @@ CBCentralManagerDelegate {
             startScan(call, result)
         case "stopScanning":
             stopScan(call, result)
+        case "startAdvertising":
+            startAdvertise(call, result)
+        case "stopAdvertising":
+            stopAdvertise(call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -75,6 +80,7 @@ CBCentralManagerDelegate {
         centralManager = CBCentralManager(delegate: self, queue: nil,                                           options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
         result(nil)
     }
+    
     public func disconnect(peripheral: CBPeripheral) {
         centralManager?.cancelPeripheralConnection(peripheral)
     }
@@ -169,7 +175,47 @@ CBCentralManagerDelegate {
     private(set) var peripherals = Dictionary<String, [String: Any?]>()
 }
 
-extension SwiftScannerPlugin: CBPeripheralDelegate {
+extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate {
+
+    public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
+        <#code#>
+    }
+
+    func startAdvertise(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        // start advertising
+        // let uuids = call.arguments as! Array<String>
+        let map = call.arguments as? Dictionary<String, Any>
+        let uuids = map?["uuids"] as! Array<String>
+        let cbuuidBlock = uuids.map({ (uuid) -> CBUUID in
+            return CBUUID(string: uuid);
+        })
+        peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
+        if (peripheralManager?.state == .poweredOn) {
+            peripheralManager?.startAdvertising([
+                CBAdvertisementDataServiceUUIDsKey : cbuuidBlock,
+            ])
+        }
+        peripheralManagerDidUpdateState(peripheralManager!)
+        // first remove all services
+        peripheralManager?.removeAllServices()
+        // next add all new services
+        for cbuuid in cbuuidBlock {
+            let serviceUUID = cbuuid
+            let service = CBMutableService(type: serviceUUID, primary: true)
+            peripheralManager?.add(service)
+        }
+        result(nil)
+    }
+    func stopAdvertise(_ call: FlutterMethodCall, _ result: @escaping FlutterResult){
+        if (peripheralManager != nil) {
+            print("Stop advertising")
+            peripheralManager?.stopAdvertising()
+            peripheralManager?.removeAllServices()
+        } else {
+            print("Cannot stop because periperalManager is nil")
+        }
+        result(nil)
+    }
     
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         var detectedServiceUUIDs: Array<String> = []
@@ -182,6 +228,9 @@ extension SwiftScannerPlugin: CBPeripheralDelegate {
         obj?["detectedServiceUUIDs"] = detectedServiceUUIDs
         print("XCODE Service detected :")
         print(detectedServiceUUIDs);
+        
+        // now disconnect
+        // disconnect(peripheral: peripheral);
         
         // send discovered data back to Flutter
         /*
@@ -227,3 +276,5 @@ extension SwiftScannerPlugin: CBPeripheralDelegate {
      }
      */
 }
+
+
