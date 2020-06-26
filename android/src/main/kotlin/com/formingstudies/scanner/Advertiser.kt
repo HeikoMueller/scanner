@@ -103,6 +103,7 @@ class Advertiser {
     }
     
     fun init(context: Context) {
+        Log.i(TAG, "ADVERTISER INIT")
         this.context = context
         if (mBluetoothLeAdvertiser == null) {
             mBluetoothLeAdvertiser = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeAdvertiser
