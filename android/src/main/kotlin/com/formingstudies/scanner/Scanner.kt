@@ -33,12 +33,14 @@ class Scanner {
     private val tag = "BLE SCANNER"
     private var mBluetoothLeScanner: BluetoothLeScanner? = null
     private var scanCallback: ScanCallback? = null
+    private var context: Context? = null
 
 
     // private val apiLevel: Int = android.os.Build.VERSION.SDK_INT
 
 
     fun init(context: Context) {
+        this.context = context
         if (mBluetoothLeScanner == null) {
             mBluetoothLeScanner = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
         }

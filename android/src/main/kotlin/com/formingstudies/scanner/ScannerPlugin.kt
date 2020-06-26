@@ -42,6 +42,8 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     // eventChannel.setMethodCallHandler(this);
     scanner = Scanner()
     scanner!!.init(applicationContext)
+    advertiser = Advertiser()
+    advertiser!!.init(applicationContext)
   }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
@@ -84,7 +86,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     advertiser!!.start(advertiseData)
     result.success(null)
   }
-  
+
   private fun stopAdvertise(result: MethodChannel.Result) {
     advertiser!!.stop()
     result.success(null)
