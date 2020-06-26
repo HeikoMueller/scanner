@@ -11,7 +11,7 @@ import io.flutter.Log
 /** ScannerPlugin */
 class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
 
-  private val tag = "ScannerPlugin"
+  private val TAG = "ScannerPlugin"
   private var applicationContext: Context? = null
   private var methodChannel: MethodChannel? = null
   private var eventChannel: EventChannel? = null
@@ -59,16 +59,16 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "startScanning") {
-      Log.i(tag, "ANDROID startScanning called")
+      Log.i(TAG, "ANDROID startScanning called")
       startScanning(call, result)
     } else if (call.method == "stopScanning") {
-      Log.i(tag, "ANDROID stopScanning called")
+      Log.i(TAG, "ANDROID stopScanning called")
       stopScanning(result)
     } else if (call.method == "startAdvertising") {
-      Log.i(tag, "ANDROID startAdvertising called")
+      Log.i(TAG, "ANDROID startAdvertising called")
       startAdvertise(call, result)
     } else if (call.method == "stopAdvertising") {
-      Log.i(tag, "ANDROID stopAdvertising called")
+      Log.i(TAG, "ANDROID stopAdvertising called")
       stopAdvertise(result)
     } else {
       result.notImplemented()
