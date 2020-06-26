@@ -30,7 +30,7 @@ import android.os.*
 
 class Scanner {
 
-    private val tag = "Scanner"
+    private val tag = "BLE SCANNER"
     private var mBluetoothLeScanner: BluetoothLeScanner? = null
     private var scanCallback: ScanCallback? = null
 

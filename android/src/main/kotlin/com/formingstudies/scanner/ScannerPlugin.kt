@@ -15,8 +15,10 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   private var applicationContext: Context? = null
   private var methodChannel: MethodChannel? = null
   private var eventChannel: EventChannel? = null
-  private var scanner: Scanner? = null
   private var eventSink: EventChannel.EventSink? = null
+  private var scanner: Scanner? = null
+  private var advertiser: Advertiser? = null
+
 
   /** Plugin registration embedding v1 */
   companion object {
@@ -60,11 +62,36 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     } else if (call.method == "stopScanning") {
       Log.i(tag, "ANDROID stopScanning called")
       stopScanning(result)
-    }
-    else {
+    } else if (call.method == "startAdvertising") {
+      Log.i(tag, "ANDROID startAdvertising called")
+      startAdvertise(call, result)
+    } else if (call.method == "stopAdvertising") {
+      Log.i(tag, "ANDROID stopAdvertising called")
+      stopAdvertise(result)
+    } else {
       result.notImplemented()
     }
   }
+
+  private fun startAdvertise(call: MethodCall, result: MethodChannel.Result) {
+    if (call.arguments !is Map<*, *>) {
+      throw IllegalArgumentException("Arguments are not a map " + call.arguments)
+    }
+    val arguments = call.arguments as Map<String, Any>
+    val advertiseData = Data(
+      arguments["uuids"] as List<String>?  
+    )
+    advertiser!!.start(advertiseData)
+    result.success(null)
+  }
+  
+  private fun stopAdvertise(result: MethodChannel.Result) {
+    advertiser!!.stop()
+    result.success(null)
+  }
+
+
+
 
   private fun startScanning(call: MethodCall, result: MethodChannel.Result) {
     if (call.arguments !is Map<*, *>) {
