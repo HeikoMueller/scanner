@@ -44,7 +44,6 @@ class Scanner {
         if (mBluetoothLeScanner == null) {
             mBluetoothLeScanner = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
         }
-        return this
     }
     
 //    fun start(uuids: Array<String>) {

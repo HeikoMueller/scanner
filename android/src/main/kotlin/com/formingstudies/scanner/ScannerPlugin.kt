@@ -48,8 +48,10 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     methodChannel!!.setMethodCallHandler(null)
     methodChannel = null
     eventChannel!!.setStreamHandler(null)
-    eventChannel = null
-    scanner = null
+    advertiser = Advertiser()
+    advertiser!!.init()
+    scanner = Scanner()
+    scanner!!.init()
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
