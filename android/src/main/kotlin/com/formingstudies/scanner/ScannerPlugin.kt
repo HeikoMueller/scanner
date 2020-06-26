@@ -82,10 +82,13 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     val advertiseData = Data(
       arguments["uuids"] as List<String>?  
     )
+    if(advertisser == null) {
+      Log.e(TAG, "ADVERTISER IS NULL !!");
+    }
     try {
       advertiser!!.start(advertiseData)
     } catch(err: Exception) {
-      Log.e(TAG, err.toString())
+      Log.e(TAG, "Error in startAdvertise" + err.toString())
     }
     result.success(null)
   }
