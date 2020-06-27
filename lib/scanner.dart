@@ -32,14 +32,14 @@ class Scanner {
     try {
       await _methodChannel.invokeMethod('startScanning', params);
     } catch(err) {
-      print("[Scanner Plugin] Start Scanning - CATCH ERROR : " + err.toString());
+      print("[Scanner Plugin] Start Scanning - CATCH ERROR : " + err.error.toString());
     }
   }
   Future<void> stopScanning() async {
     try {
       await _methodChannel.invokeMethod('stopScanning');
     } catch(err) {
-      print("[Scanner Plugin] Stop Scanning - CATCH ERROR : " + err.toString());
+      print("[Scanner Plugin] Stop Scanning - CATCH ERROR : " + err.error.toString());
     }
   }
   Future<void> startAdvertising({@required List uuids}) async {
@@ -49,7 +49,7 @@ class Scanner {
     try {
       await _methodChannel.invokeMethod('startAdvertising', params);
     } catch(err) {
-      print("[Scanner Plugin] Start Advertising - CATCH ERROR : " + err.toString());
+      print("[Scanner Plugin] Start Advertising - CATCH ERROR : " + err.error.toString());
     }
 
   }
@@ -57,7 +57,7 @@ class Scanner {
     try {
       await _methodChannel.invokeMethod('stopAdvertising');
     } catch(err) {
-      print("[Scanner Plugin] Stop Advertising - CATCH ERROR : " + err.toString());
+      print("[Scanner Plugin] Stop Advertising - CATCH ERROR : " + err.error.toString());
     }
   }    
 
