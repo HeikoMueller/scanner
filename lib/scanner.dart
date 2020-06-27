@@ -29,19 +29,36 @@ class Scanner {
     Map params = <String, dynamic>{
       "uuids": data.uuids,
     };
-    await _methodChannel.invokeMethod('startScanning', params);
+    try {
+      await _methodChannel.invokeMethod('startScanning', params);
+    } catch(err) {
+      print("[Scanner Plugin] Start Scanning - CATCH ERROR : " + err.toString());
+    }
   }
   Future<void> stopScanning() async {
-    await _methodChannel.invokeMethod('stopScanning');
+    try {
+      await _methodChannel.invokeMethod('stopScanning');
+    } catch(err) {
+      print("[Scanner Plugin] Stop Scanning - CATCH ERROR : " + err.toString());
+    }
   }
   Future<void> startAdvertising({@required List uuids}) async {
     Map params = <String, dynamic>{
       "uuids": uuids,
     };
-    await _methodChannel.invokeMethod('startAdvertising', params);
+    try {
+      await _methodChannel.invokeMethod('startAdvertising', params);
+    } catch(err) {
+      print("[Scanner Plugin] Start Advertising - CATCH ERROR : " + err.toString());
+    }
+
   }
   Future<void> stopAdvertising() async {
-    await _methodChannel.invokeMethod('stopAdvertising');
+    try {
+      await _methodChannel.invokeMethod('stopAdvertising');
+    } catch(err) {
+      print("[Scanner Plugin] Stop Advertising - CATCH ERROR : " + err.toString());
+    }
   }    
 
   Stream<dynamic> getDetected() {

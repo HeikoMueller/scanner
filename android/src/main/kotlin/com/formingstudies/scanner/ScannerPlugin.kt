@@ -74,6 +74,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   }
 
   private fun startAdvertise(call: MethodCall, result: MethodChannel.Result) {
+    Log.i(TAG, "startAdvertise in ScannerPlugin called")
     if (call.arguments !is Map<*, *>) {
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
@@ -90,6 +91,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   }
 
   private fun stopAdvertise(result: MethodChannel.Result) {
+    Log.i(TAG, "stopAdvertise in ScannerPlugin called")
     try {
       advertiser!!.stop()
     } catch(err: Exception) {
@@ -103,6 +105,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
 
 
   private fun startScanning(call: MethodCall, result: MethodChannel.Result) {
+    Log.i(TAG, "startScanning in ScannerPlugin called")
     if (call.arguments !is Map<*, *>) {
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
@@ -115,6 +118,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   }
 
   private fun stopScanning(result: MethodChannel.Result) {
+    Log.i(TAG, "stopScanning in ScannerPlugin called")
     scanner!!.stop()
     result.success(null)
   }
