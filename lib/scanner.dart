@@ -47,7 +47,7 @@ class Scanner {
     try {
       await _methodChannel.invokeMethod('startScanning', params);
     } on PlatformException catch(err){
-      _log.error(TAG,"Plugin] Start Scanning - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Start Scanning - CATCH ERROR : " + err.toString());
       _log.error(TAG,"Start Scanning - CATCH Message : " + err.message);
       _log.error(TAG,"Start Scanning - CATCH Details : " + err.details.toString());
     } 
