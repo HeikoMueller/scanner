@@ -50,9 +50,7 @@ class Scanner {
       _log.error(TAG,"Plugin] Start Scanning - CATCH ERROR : " + err.toString());
       _log.error(TAG,"Start Scanning - CATCH Message : " + err.message);
       _log.error(TAG,"Start Scanning - CATCH Details : " + err.details.toString());
-    } catch(err) {
-      _log.error(TAG,"Plugin] Start Scanning - CATCH ERROR : " + err.toString());
-    }
+    } 
   }
   Future<void> stopScanning() async {
     try {
@@ -61,9 +59,7 @@ class Scanner {
       _log.error(TAG,"Stop Scanning - CATCH ERROR : " + err.toString());
       _log.error(TAG,"Stop Scanning - CATCH Message : " + err.message);
       _log.error(TAG,"Stop Scanning - CATCH Details : " + err.details.toString());
-    } catch(err) {
-      _log.error(TAG,"Stop Scanning - CATCH ERROR : " + err.toString());
-    }
+    } 
   }
   Future<void> startAdvertising({@required List uuids}) async {
     Map params = <String, dynamic>{
@@ -75,9 +71,7 @@ class Scanner {
       _log.error(TAG,"Start Advertising - CATCH ERROR : " + err.toString());
       _log.error(TAG,"Start Advertising - CATCH Message : " + err.message);
       _log.error(TAG,"Start Advertising - CATCH Details : " + err.details.toString());
-    } catch(err) {
-      _log.error(TAG,"Start Advertising - CATCH ERROR : " + err.toString());
-    }
+    } 
 
   }
   Future<void> stopAdvertising() async {
@@ -87,9 +81,7 @@ class Scanner {
       _log.error(TAG,"Stop Advertising - CATCH ERROR : " + err.toString());
       _log.error(TAG,"Stop Advertising - CATCH Message : " + err.message);
       _log.error(TAG,"Stop Advertising - CATCH Details : " + err.details.toString());
-    } catch(err) {
-      _log.error(TAG,"Stop Advertising - CATCH ERROR : " + err.toString());
-    }
+    } 
   }    
 
   Stream<dynamic> getDetected() {
