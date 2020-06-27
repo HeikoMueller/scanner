@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:log_4_dart_2/log_4_dart_2.dart';
 
 import 'data.dart';
 
@@ -15,6 +16,18 @@ class Scanner {
           'roktok.immu.dev/bluetoothScannerResponse');
       _instance = Scanner.private(methodChannel, eventChannel);
     }
+    if(_log == null) {
+      _log = Logger();
+      _log.init({
+        "appenders": [
+          {
+            "type": "CONSOLE",
+            "dateFormat": "yyyy-MM-dd HH:mm:ss",
+            "format": "%d %i %t %l %m",
+            "level": "TRACE"
+          }]
+      });
+    }
     return _instance;
   }
 
@@ -22,6 +35,8 @@ class Scanner {
   Scanner.private(this._methodChannel, this._eventChannel);
 
   static Scanner _instance;
+  static Logger _log;
+  static const TAG = "[Scanner Plugin]";
   final MethodChannel _methodChannel;
   final EventChannel _eventChannel;
 
@@ -32,20 +47,22 @@ class Scanner {
     try {
       await _methodChannel.invokeMethod('startScanning', params);
     } on PlatformException catch(err){
-      print("[Scanner Plugin] Start Scanning - CATCH Message : " + err.message);
-      print("[Scanner Plugin] Start Scanning - CATCH Details : " + err.details.toString());
+      _log.error(TAG,"Plugin] Start Scanning - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Start Scanning - CATCH Message : " + err.message);
+      _log.error(TAG,"Start Scanning - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Start Scanning - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Plugin] Start Scanning - CATCH ERROR : " + err.toString());
     }
   }
   Future<void> stopScanning() async {
     try {
       await _methodChannel.invokeMethod('stopScanning');
     } on PlatformException catch(err){
-      print("[Scanner Plugin] Stop Scanning - CATCH Message : " + err.message);
-      print("[Scanner Plugin] Stop Scanning - CATCH Details : " + err.details.toString());
+      _log.error(TAG,"Stop Scanning - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Stop Scanning - CATCH Message : " + err.message);
+      _log.error(TAG,"Stop Scanning - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Stop Scanning - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Stop Scanning - CATCH ERROR : " + err.toString());
     }
   }
   Future<void> startAdvertising({@required List uuids}) async {
@@ -55,10 +72,11 @@ class Scanner {
     try {
       await _methodChannel.invokeMethod('startAdvertising', params);
     } on PlatformException catch(err){
-      print("[Scanner Plugin] Start Advertising - CATCH Message : " + err.message);
-      print("[Scanner Plugin] Start Advertising - CATCH Details : " + err.details.toString());
+      _log.error(TAG,"Start Advertising - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Start Advertising - CATCH Message : " + err.message);
+      _log.error(TAG,"Start Advertising - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Start Advertising - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Start Advertising - CATCH ERROR : " + err.toString());
     }
 
   }
@@ -66,10 +84,11 @@ class Scanner {
     try {
       await _methodChannel.invokeMethod('stopAdvertising');
     } on PlatformException catch(err){
-      print("[Scanner Plugin] Stop Advertising - CATCH Message : " + err.message);
-      print("[Scanner Plugin] Stop Advertising - CATCH Details : " + err.details.toString());
+      _log.error(TAG,"Stop Advertising - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Stop Advertising - CATCH Message : " + err.message);
+      _log.error(TAG,"Stop Advertising - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Stop Advertising - CATCH ERROR : " + err.toString());
+      _log.error(TAG,"Stop Advertising - CATCH ERROR : " + err.toString());
     }
   }    
 
