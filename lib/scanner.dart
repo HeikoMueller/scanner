@@ -31,15 +31,21 @@ class Scanner {
     };
     try {
       await _methodChannel.invokeMethod('startScanning', params);
+    } on PlatformException catch(err){
+      print("[Scanner Plugin] Start Scanning - CATCH Message : " + err.message);
+      print("[Scanner Plugin] Start Scanning - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Start Scanning - CATCH ERROR : " + err.toStringDeep());
+      print("[Scanner Plugin] Start Scanning - CATCH ERROR : " + err.toString());
     }
   }
   Future<void> stopScanning() async {
     try {
       await _methodChannel.invokeMethod('stopScanning');
+    } on PlatformException catch(err){
+      print("[Scanner Plugin] Stop Scanning - CATCH Message : " + err.message);
+      print("[Scanner Plugin] Stop Scanning - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Stop Scanning - CATCH ERROR : " + err.toStringDeep());
+      print("[Scanner Plugin] Stop Scanning - CATCH ERROR : " + err.toString());
     }
   }
   Future<void> startAdvertising({@required List uuids}) async {
@@ -48,16 +54,22 @@ class Scanner {
     };
     try {
       await _methodChannel.invokeMethod('startAdvertising', params);
+    } on PlatformException catch(err){
+      print("[Scanner Plugin] Start Advertising - CATCH Message : " + err.message);
+      print("[Scanner Plugin] Start Advertising - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Start Advertising - CATCH ERROR : " + err.toStringDeep());
+      print("[Scanner Plugin] Start Advertising - CATCH ERROR : " + err.toString());
     }
 
   }
   Future<void> stopAdvertising() async {
     try {
       await _methodChannel.invokeMethod('stopAdvertising');
+    } on PlatformException catch(err){
+      print("[Scanner Plugin] Stop Advertising - CATCH Message : " + err.message);
+      print("[Scanner Plugin] Stop Advertising - CATCH Details : " + err.details.toString());
     } catch(err) {
-      print("[Scanner Plugin] Stop Advertising - CATCH ERROR : " + err.toStringDeep());
+      print("[Scanner Plugin] Stop Advertising - CATCH ERROR : " + err.toString());
     }
   }    
 
