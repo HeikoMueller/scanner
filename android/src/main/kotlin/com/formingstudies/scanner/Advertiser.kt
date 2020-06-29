@@ -30,6 +30,8 @@ class Advertiser {
             for(service in gatt.services.orEmpty()) {
                 Log.i(TAG, "Service discovered " + service.uuid.toString())
             }
+            Log.i(TAG, "Service discovered END ===============================================")
+
         }
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             Log.i(TAG, "EXTERNAL SEVICE connection did change")

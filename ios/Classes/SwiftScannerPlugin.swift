@@ -188,6 +188,23 @@ extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate 
             for cbuuid in advertiseBlock! {
                 let serviceUUID = cbuuid
                 let service = CBMutableService(type: serviceUUID, primary: true)
+                
+                // add characteristics
+                let characteristicUUID = CBUUID(string: cbuuid.uuidString)
+                let properties: CBCharacteristicProperties = [.notify, .read, .write]
+                let permissions: CBAttributePermissions = [.readable, .writeable]
+                let characteristic = CBMutableCharacteristic(
+                    type: characteristicUUID,
+                    properties: properties,
+                    value: "Hello Hank from XCode".data(using: .utf8),
+                    permissions: permissions)
+                    
+                service.characteristics = [characteristic]
+                
+                
+                
+                
+                
                 peripheralManager?.add(service)
             }
             peripheralManager?.startAdvertising([
