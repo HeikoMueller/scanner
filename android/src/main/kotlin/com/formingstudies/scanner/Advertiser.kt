@@ -44,12 +44,13 @@ class Advertiser {
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
             Log.i(TAG, "EXTERNAL SEVICE characteristic changed")
         }
-        override fun onCharacteristicRead(gatt: BluetoothGatt!, characteristic: BluetoothGattCharacteristic!, status: Int) {
+        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
             Log.i(TAG, "EXTERNAL SEVICE characteristic READ")
             val value = characteristic.getValue();
             if(value != null) {
                 Log.i(TAG, "EXTERNAL SERVICE VALUE " + value.toString())
             }
+        }
     }
 
     private val mGattServerCallback = object : BluetoothGattServerCallback() {
