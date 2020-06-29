@@ -179,6 +179,22 @@ CBCentralManagerDelegate {
 
 extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate {
     
+   
+    
+    public func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest)
+    {
+        // if request.characteristic.UUID.isEqual(characteristic.UUID)
+        // {
+            // Set the correspondent characteristic's value
+            // to the request
+            //request.value = characteristic.value
+            request.value =  "Hello Hank from XCode".data(using: .utf8)
+            // Respond to the request
+            peripheralManager?.respond(
+                to: request,
+                withResult: .success)
+        // }
+    }
     
     public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         if (peripheral.state == .poweredOn && advertiseIt) {
@@ -191,12 +207,12 @@ extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate 
                 
                 // add characteristics
                 let characteristicUUID = CBUUID(string: cbuuid.uuidString)
-                let properties: CBCharacteristicProperties = [.read]
+                let properties: CBCharacteristicProperties = [.notify, .read, .write]
                 let permissions: CBAttributePermissions = [.readable, .writeable]
                 let characteristic = CBMutableCharacteristic(
                     type: characteristicUUID,
                     properties: properties,
-                    value: "Hello Hank from XCode".data(using: .utf8),
+                    value: nil,
                     permissions: permissions)
                     
                 service.characteristics = [characteristic]
