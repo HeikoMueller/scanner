@@ -216,11 +216,6 @@ extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate 
                     permissions: permissions)
                     
                 service.characteristics = [characteristic]
-                
-                
-                
-                
-                
                 peripheralManager?.add(service)
             }
             peripheralManager?.startAdvertising([

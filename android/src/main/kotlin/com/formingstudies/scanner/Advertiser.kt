@@ -29,6 +29,8 @@ class Advertiser {
             Log.i(TAG, "EXTERNAL SEVICE called Connection Did Change")
             for(service in gatt.services.orEmpty()) {
                 Log.i(TAG, "Service discovered " + service.uuid.toString())
+                // now get characteristics
+                service.getCharacteristics()
             }
             Log.i(TAG, "Service discovered END ===============================================")
 
@@ -42,6 +44,12 @@ class Advertiser {
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
             Log.i(TAG, "EXTERNAL SEVICE characteristic changed")
         }
+        override fun onCharacteristicRead(gatt: BluetoothGatt!, characteristic: BluetoothGattCharacteristic!, status: Int) {
+            Log.i(TAG, "EXTERNAL SEVICE characteristic READ")
+            val value = characteristic.getValue();
+            if(value != null) {
+                Log.i(TAG, "EXTERNAL SERVICE VALUE " + value.toString())
+            }
     }
 
     private val mGattServerCallback = object : BluetoothGattServerCallback() {
