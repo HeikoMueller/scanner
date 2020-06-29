@@ -191,7 +191,7 @@ extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate 
                 
                 // add characteristics
                 let characteristicUUID = CBUUID(string: cbuuid.uuidString)
-                let properties: CBCharacteristicProperties = [.notify, .read]
+                let properties: CBCharacteristicProperties = [.read]
                 let permissions: CBAttributePermissions = [.readable, .writeable]
                 let characteristic = CBMutableCharacteristic(
                     type: characteristicUUID,
