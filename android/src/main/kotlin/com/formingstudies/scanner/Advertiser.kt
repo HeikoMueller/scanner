@@ -24,6 +24,9 @@ class Advertiser {
     private var mBluetoothGattServer: BluetoothGattServer? = null
     private var context: Context? = null
 
+    private var commandQueue: Queue<Runnable>;
+    private var commandQueueBusy: Boolean;
+
     private val mBluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onServicesDiscovered (gatt: BluetoothGatt , status: Int) {
             Log.i(TAG, "EXTERNAL SEVICE called Connection Did Change")
