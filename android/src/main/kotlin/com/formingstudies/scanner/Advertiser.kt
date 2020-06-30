@@ -3,17 +3,23 @@
  * All rights reserved. Use of this source code is governed by a
  * BSD-style license that can be found in the LICENSE file.
  */
+/* https://medium.com/@martijn.van.welie/making-android-ble-work-part-3-117d3a8aee23 */
 
 package com.formingstudies.scanner
 
 import android.bluetooth.*
+import android.bluetooth.BluetoothGatt.GATT_SUCCESS
+import android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
+import android.os.Handler
 import android.os.ParcelUuid
 import io.flutter.Log
+import java.util.*
+
 
 class Advertiser {
 
@@ -23,39 +29,163 @@ class Advertiser {
     private val TAG = "BLE ADVERTISER"
     private var mBluetoothGattServer: BluetoothGattServer? = null
     private var context: Context? = null
+    private val MAX_TRIES = 10
+    private var bleHandler: Handler = Handler()
 
-    private var commandQueue: Queue<Runnable>;
-    private var commandQueueBusy: Boolean;
+    private val commandQueue: Queue<Runnable>? = null
+    private var commandQueueBusy = false
+    private var isRetrying: Boolean = false
+    private var bluetoothGatt: BluetoothGatt? = null
+    private var nrTries: Int = 0
 
-    private val mBluetoothGattCallback = object : BluetoothGattCallback() {
-        override fun onServicesDiscovered (gatt: BluetoothGatt , status: Int) {
-            Log.i(TAG, "EXTERNAL SEVICE called Connection Did Change")
-            for(service in gatt.services.orEmpty()) {
-                Log.i(TAG, "Service discovered " + service.uuid.toString())
-                // now get characteristics
-                service.getCharacteristics()
+    private fun completedCommand() {
+        commandQueueBusy = false
+        isRetrying = false
+        commandQueue!!.poll()
+        nextCommand()
+    }
+
+    private fun retryCommand() {
+        commandQueueBusy = false
+        val currentCommand = commandQueue!!.peek()
+        if (currentCommand != null) {
+            if (nrTries >= MAX_TRIES) {
+                // Max retries reached, give up on this one and proceed
+                Log.v(TAG, "Max number of tries reached")
+                commandQueue.poll()
+            } else {
+                isRetrying = true
             }
-            Log.i(TAG, "Service discovered END ===============================================")
+        }
+        nextCommand()
+    }
 
+    private fun nextCommand() {
+        // If there is still a command being executed then bail out
+        if (commandQueueBusy) {
+            return
         }
-        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            Log.i(TAG, "EXTERNAL SEVICE connection did change")
-            gatt.discoverServices()
-            // Log.i(TAG, gatt.services.toString())
 
+        // Check if we still have a valid gatt object
+        if (bluetoothGatt == null) {
+            Log.e(TAG, java.lang.String.format("ERROR: GATT is 'null' for peripheral '%s', clearing command queue", getAddress()))
+            commandQueue!!.clear()
+            commandQueueBusy = false
+            return
         }
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-            Log.i(TAG, "EXTERNAL SEVICE characteristic changed")
-        }
-        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
-            Log.i(TAG, "EXTERNAL SEVICE characteristic READ")
-            val value = characteristic.getValue();
-            if(value != null) {
-                Log.i(TAG, "EXTERNAL SERVICE VALUE " + value.toString())
-            }
+
+        // Execute the next command in the queue
+        if (commandQueue!!.size > 0) {
+            val bluetoothCommand = commandQueue.peek()
+            commandQueueBusy = true
+            nrTries = 0
+            bleHandler.post(Runnable {
+                try {
+                    bluetoothCommand.run()
+                } catch (err) {
+                    Log.e(TAG, "bleHandler CATCH ERROR " + err.toString())
+                }
+            })
         }
     }
 
+
+    // the readCharacteristic command
+    open fun readCharacteristic(characteristic: BluetoothGattCharacteristic?): Boolean {
+        Log.i(TAG, "READ CHARACTERISTICS START")
+
+        if (bluetoothGatt == null) {
+            Log.e(TAG, "ERROR: Gatt is 'null', ignoring read request")
+            return false
+        }
+
+        // Check if characteristic is valid
+        if (characteristic == null) {
+            Log.e(TAG, "ERROR: Characteristic is 'null', ignoring read request")
+            return false
+        }
+
+        // Check if this characteristic actually has READ property
+        if (characteristic.properties and PROPERTY_READ === 0) {
+            Log.e(TAG, "ERROR: Characteristic cannot be read")
+            return false
+        }
+
+        // Enqueue the read command now that all checks have been passed
+        val result = commandQueue!!.add(Runnable {
+            if (!bluetoothGatt!!.readCharacteristic(characteristic)) {
+                Log.e(TAG, java.lang.String.format("ERROR: readCharacteristic failed for characteristic: %s", characteristic.uuid))
+                completedCommand()
+            } else {
+                Log.d(TAG, java.lang.String.format("reading characteristic <%s>", characteristic.uuid))
+                nrTries++
+            }
+        })
+        if (result) {
+            nextCommand()
+        } else {
+            Log.e(TAG, "ERROR: Could not enqueue read characteristic command")
+        }
+        return result
+    }
+
+    private val mBluetoothGattCallback = object : BluetoothGattCallback() {
+        override fun onServicesDiscovered (gatt: BluetoothGatt , status: Int) {
+            Log.i(TAG, "EXTERNAL SERVICE called Connection Did Change")
+            for(service in gatt.services.orEmpty()) {
+                Log.i(TAG, "Service discovered " + service.uuid.toString())
+                // now get characteristics
+                var characteristic = service.getCharacteristic(ParcelUuid.fromString("00001800-0000-1000-8000-00805f9b34fb").uuid)
+                Log.i(TAG,characteristic.toString())
+                Log.i(TAG, "CHARACTERISTIC ?")
+                /*
+                for(characteristic in service.characteristics) {
+                    readCharacteristic(characteristic)
+                }
+                */
+                 */
+            }
+            Log.i(TAG, "Service discovered END HANK ===============================================")
+        }
+
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            Log.i(TAG, "EXTERNAL SERVICE connection did change")
+            bluetoothGatt = gatt
+            gatt.discoverServices()
+        }
+
+        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+            Log.i(TAG, "EXTERNAL SERVICE characteristic changed")
+        }
+
+        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
+            Log.i(TAG, "EXTERNAL SERVICE characteristic READ")
+        }
+
+        /*
+        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
+            Log.i(TAG, "EXTERNAL SEVICE characteristic READ")
+            if (status != GATT_SUCCESS) {
+                Log.e(TAG, String.format(Locale.ENGLISH,"ERROR: Read failed for characteristic: %s, status %d", characteristic.getUuid(), status));
+                completedCommand();
+                return;
+            }
+
+            // Characteristic has been read so processes it
+            ...
+            // We done, complete the command
+            completedCommand();
+            val value = characteristic.value;
+            if(value != null) {
+                Log.i(TAG, "EXTERNAL SERVICE VALUE $value")
+            }
+
+         */
+    }
+
+
+
+    /* Callbacks on own GATT server */
     private val mGattServerCallback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             Log.i(TAG, "GATT-SERVER CALLBACK called Connection Did Change")
@@ -63,6 +193,7 @@ class Advertiser {
             Log.i(TAG, status.toString())
             Log.i(TAG, newState.toString())
             try {
+                // try to connect
                 device?.connectGatt(context,true, mBluetoothGattCallback)
             } catch(err: Exception) {
                 Log.e(TAG, err.toString())
