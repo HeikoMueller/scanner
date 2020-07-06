@@ -275,9 +275,9 @@ extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate 
     
     func startAdvertise(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         let map = call.arguments as? Dictionary<String, Any>
-        advertiseServiceUUID = map?["serviceUuid"] as? String
-        advertiseCharacteristicUUID = map?["characteristicUuid"] as? String
-        advertiseCharacteristicValue = map?["characteristicUuid"] as? String
+        advertiseServiceUUID = map?["serviceUUID"] as? String
+        advertiseCharacteristicUUID = map?["characteristicUUID"] as? String
+        advertiseCharacteristicValue = map?["characteristicValue"] as? String
         advertiseIt = true;
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
         peripheralManagerDidUpdateState(peripheralManager!)
