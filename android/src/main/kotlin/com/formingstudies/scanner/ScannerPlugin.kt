@@ -80,7 +80,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     }
     val arguments = call.arguments as Map<String, Any>
     val advertiseData = Data(
-      arguments["advertiseServiceUUID"] as String?,
+      arguments["advertiseServiceUUID"] as String,
       arguments["advertiseCharacteristicUUID"] as String?,
       arguments["advertiseCharacteristicValue"] as String?
     )
@@ -113,7 +113,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     }
     val arguments = call.arguments as Map<String, Any>
     val scanData = Data(
-      arguments["serviceUUID"] as String?
+      arguments["serviceUUID"] as String
     )
     scanner!!.start(scanData)
     result.success(null)
