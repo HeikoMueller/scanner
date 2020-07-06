@@ -1,5 +1,7 @@
 package com.formingstudies.scanner
 
 class Data(
-    val uuids: List<String>?
+    val advertiseServiceUUID: String?,
+    val advertiseCharacteristicUUID: String?,
+    val advertiseCharacteristicValue: String?
 )

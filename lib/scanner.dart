@@ -61,9 +61,11 @@ class Scanner {
       _log.error(TAG,"Stop Scanning - CATCH Details : " + err.details.toString());
     } 
   }
-  Future<void> startAdvertising({@required List uuids}) async {
+  Future<void> startAdvertising({@required String serviceUUID, @required String characteristicUUID, @required String characteristicValue}) async {
     Map params = <String, dynamic>{
-      "uuids": uuids,
+      "serviceUUID": serviceUUID,
+      "characteristicUUID": characteristicUUID,
+      "characteristicValue": characteristicValue
     };
     try {
       await _methodChannel.invokeMethod('startAdvertising', params);

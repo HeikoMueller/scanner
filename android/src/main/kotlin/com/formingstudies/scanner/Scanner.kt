@@ -88,11 +88,18 @@ class Scanner {
 
     private fun buildScanFilters(data: Data): ArrayList<ScanFilter>? {
         var scanFilters = ArrayList<ScanFilter>()
+        if(data.advertiseServiceUUID != null) {
+            val dataBuilder = ScanFilter.Builder()
+            dataBuilder.setServiceUuid(ParcelUuid.fromString(data.advertiseServiceUUID));
+            scanFilters.add(dataBuilder.build())        
+        }
+        /*    
         for (uuid in data.uuids.orEmpty()) {
             val dataBuilder = ScanFilter.Builder()
             dataBuilder.setServiceUuid(ParcelUuid.fromString(uuid));
             scanFilters.add(dataBuilder.build())
         }
+        */
         return scanFilters
     }
 }
