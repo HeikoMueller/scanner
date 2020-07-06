@@ -158,22 +158,18 @@ class Advertiser {
     private val mBluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onServicesDiscovered (gatt: BluetoothGatt , status: Int) {
             for(service in gatt.services.orEmpty()) {
-                Log.i(TAG, "EXTERNAL SERVICE onServicesDiscovered" + service.uuid.toString())
+                // Log.i(TAG, "EXTERNAL SERVICE onServicesDiscovered " + service.uuid.toString())
                 if(serviceUUIDs.contains(service.uuid.toString())) {
-                    Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED" + service.uuid.toString())
+                    Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED " + service.uuid.toString())
                     // now get characteristics
 
                     var characteristics = service.characteristics
-
+                    Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED CHARACTERISTICS LENGTH " + characteristics.size.toString())
                     for (characteristic in characteristics) {
+                        Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED CHARACTERISTICS UUID " + characteristic.uuid.toString())
                         readCharacteristic(characteristic)
-                        Log.i(TAG,characteristic.toString())
                     }
-
-
                 }
-
-
             }
             Log.i(TAG, "Service discovered END HANK ===============================================")
         }
