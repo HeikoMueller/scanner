@@ -46,8 +46,6 @@ CBCentralManagerDelegate {
             startAdvertise(call, result)
         case "stopAdvertising":
             stopAdvertise(call, result)
-        case "advertiseCharacteristic":
-            advertiseCharacteristic(call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
