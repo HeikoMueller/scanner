@@ -316,11 +316,14 @@ class Advertiser {
 
         // first remove all services
         mBluetoothGattServer!!.clearServices()
+        val service = buildService(data.advertiseServiceUUID)
+        mBluetoothGattServer!!.addService(service)
+        /*
         for(uuidString in data.uuids!!) {
             val service = buildService(uuidString)
             mBluetoothGattServer!!.addService(service)
         }
-
+        */
         if(!isAdvertising) {
             mBluetoothLeAdvertiser!!.startAdvertising(settings, advertiseData, mAdvertiseCallback)
         }
@@ -359,7 +362,8 @@ class Advertiser {
          */
         // val serviceData = data.serviceData?.let { intArrayToByteArray(it) }
         // val manufacturerData = data.manufacturerData?.let { intArrayToByteArray(it) }
-        val uuid = data.uuids!!.first()    
+        // val uuid = data.uuids!!.first()   
+        val uuid = data.advertiseServiceUUID 
         val dataBuilder = AdvertiseData.Builder()
             .addServiceUuid(ParcelUuid.fromString(uuid!!))
 //            .setIncludeTxPowerLevel(it)
