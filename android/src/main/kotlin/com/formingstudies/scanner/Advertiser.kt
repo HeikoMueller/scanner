@@ -162,7 +162,6 @@ class Advertiser {
                 if(serviceUUIDs.contains(service.uuid.toString())) {
                     Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED " + service.uuid.toString())
                     // now get characteristics
-
                     var characteristics = service.characteristics
                     Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED CHARACTERISTICS LENGTH " + characteristics.size.toString())
                     for (characteristic in characteristics) {
