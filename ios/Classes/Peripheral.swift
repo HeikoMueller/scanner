@@ -35,8 +35,9 @@ class Peripheral : NSObject {
 		guard let transferCharacteristic = transferCharacteristic else {
 			return
 		}
-		
+		return
         // First up, check if we're meant to be sending an EOM
+        /*
         if PeripheralViewController.sendingEOM {
             // send it
             let didSend = peripheralManager.updateValue("EOM".data(using: .utf8)!, for: transferCharacteristic, onSubscribedCentrals: nil)
@@ -102,6 +103,7 @@ class Peripheral : NSObject {
                 return
             }
         }
+        */
     }
 
     private func setupPeripheral() {
