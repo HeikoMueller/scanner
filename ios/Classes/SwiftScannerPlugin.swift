@@ -5,31 +5,16 @@ import Flutter
 import UIKit
 import CoreBluetooth
 
-public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
-CBCentralManagerDelegate {
+public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     
+    private var peripheral = Peripheral()
+    private var central = Central()
+
+
     // MARK: - Private properties
-    private var centralManager: CBCentralManager?
-    private var peripheralManager: CBPeripheralManager?
     private var cbuuids: Array<CBUUID>?
     private var eventSink: FlutterEventSink?
-    private(set) var connectedPeripherals = Set<CBPeripheral>()
-    private(set) var peripherals = Dictionary<String, [String: Any?]>()
-    
-    var ownService: CBMutableService?
-    // var characteristic: CBMutableCharacteristic?
-    var advertiseBlock: [CBUUID]!
-    var advertiseServiceUUID: String!
-    var advertiseCharacteristicUUID: String!
-    var advertiseCharacteristicValue: String!
-    var advertiseIt: Bool = false
-    var iteration: Int = 1
-    
-    /*
-    required override init() {
-        super.init()
-    }
-    */
+
     public static func register(with registrar: FlutterPluginRegistrar) {
         let instance = SwiftScannerPlugin()
         let methodChannel = FlutterMethodChannel(name: "roktok.immu.dev/bluetoothScanner",
@@ -43,16 +28,13 @@ CBCentralManagerDelegate {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch (call.method) {
         case "startScanning":
-            if(advertiseServiceUUID == nil) {startAdvertise(call, result)}
-            startScan(call, result)
+            startScanning(call, result)
         case "stopScanning":
-            stopScan(call, result)
+            stopScanning(call, result)
         case "startAdvertising":
-            startScan(call, result)
-            // startAdvertise(call, result)
+            startAdvertising(call, result)
         case "stopAdvertising":
-            stopScan(call, result)
-            // stopAdvertise(call, result)
+            stopAdvertising(call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -68,371 +50,24 @@ CBCentralManagerDelegate {
         eventSink = nil
         return nil
     }
-    func stopScan(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        print("XCODE : STOP SCAN CALLED");
-        if #available(iOS 9.0, *) {
-            if (centralManager?.isScanning == true) {
-                centralManager?.stopScan()
-            }
-        } else {
-            // Fallback on earlier versions
-            centralManager?.stopScan()
-        }
-        peripherals.removeAll()
-        // now disconnect
-        for peripheral in connectedPeripherals {
-            disconnect(peripheral: peripheral);
-        }
-        
-        result(nil)
-    }
-    
-    func startScan(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+
+    func startScanning(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         // let uuids = call.arguments as! Array<String>
         // let map = call.arguments as? Dictionary<String, Any>
         // let uuids = map?["uuids"] as! Array<String>
-        let uuids = ["11116E73-1C03-5DE6-9130-5F9925AE8AB4"]
-        print("XCODE start scan called with \(String(describing: uuids))")
-     
-        
-     self.cbuuids = uuids.map({ (uuid) -> CBUUID in
-         return CBUUID(string: uuid);
-     })
-     centralManager = CBCentralManager(delegate: self, queue: nil,                                           options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
+        central.startScanning();
         result(nil)
     }
-    
-    public func disconnect(peripheral: CBPeripheral) {
-        centralManager?.cancelPeripheralConnection(peripheral)
+    func stopScanning(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        central.stopScanning();
+        result(nil)
     }
-    
-    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        if(!connectedPeripherals.contains(peripheral)) {
-            connectedPeripherals.insert(peripheral)
-        }
-        connectedPeripherals.remove(peripheral)
+    func startAdvertising(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        peripheral.startAdvertising();
+        result(nil)
     }
-    
-    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        if(!connectedPeripherals.contains(peripheral)) {
-            connectedPeripherals.insert(peripheral)
-        }
-        connectedPeripherals.remove(peripheral)
+    func stopAdvertising(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        peripheral.stopAdvertising();
+        result(nil)
     }
-    
-    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        if(connectedPeripherals.contains(peripheral)) {
-            connectedPeripherals.remove(peripheral)
-        }
-        connectedPeripherals.insert(peripheral)
-        peripheral.discoverServices(nil)
-    }
-    
-    
-    public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        
-        if(peripheral.state == CBPeripheralState.disconnected) {
-            peripheral.delegate = self
-            connectedPeripherals.insert(peripheral)
-            central.connect(peripheral, options: nil)
-        }
-        
-        /*
-        // var detectedServiceUUID: String!;
-        var detectedServiceUUIDS: Array<String>! = [];
-        var isInBackground: Bool = false;
-        
-        // first check for serviceUUIDs in the overflow area
-        if advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] != nil {
-            
-            if let overflowServiceUUIDs: [CBUUID?] = advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey]!  as? [CBUUID?] {
-                for uuid in overflowServiceUUIDs {
-                    if self.cbuuids!.contains(uuid!) {
-                        
-                        detectedServiceUUIDS.append(uuid!.uuidString)
-                        
-                        isInBackground = true
-                    }
-                }
-            }
-        }
-        
-        // if nothing has been detected yet, check the normal serviceUUIDs
-        if detectedServiceUUIDS.count == 0 {
-            if let serviceUUIDs: [CBUUID?] = advertisementData[CBAdvertisementDataServiceUUIDsKey]  as? [CBUUID?] {
-                for uuid in serviceUUIDs {
-                    if self.cbuuids!.contains(uuid!) {
-                        detectedServiceUUIDS.append(uuid!.uuidString)
-                        isInBackground = false
-                    }
-                }
-            }
-        }
-        
-        if detectedServiceUUIDS.count != 0 {
-            let jsonObject: [String: Any?] = [
-                "id": peripheral.identifier.uuidString,
-                "name": peripheral.name,
-                "rssi": RSSI,
-                "txLevel": advertisementData[CBAdvertisementDataTxPowerLevelKey],
-                "isInBackground" : isInBackground,
-                // "detectedServiceUUIDs" : detectedServiceUUIDS
-            ]
-            
-            peripherals[peripheral.identifier.uuidString] = jsonObject;
-        }
-         */
-        
-    }
-    
-    public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
-        
-    }
-    
-    open func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        switch central.state {
-        case .poweredOn:
-            // print("XCODE CM State is poweredON")
-            central.scanForPeripherals(withServices: cbuuids!, options: [CBCentralManagerScanOptionAllowDuplicatesKey: true, CBCentralManagerScanOptionSolicitedServiceUUIDsKey: cbuuids!])
-        case .poweredOff:
-            // print("XCODE CM State is poweredOFF")
-            central.stopScan()
-        case .unsupported: print("XCODE Unsupported BLE module")
-        default: break
-        }
-    }
-    
-
-
 }
-
-extension SwiftScannerPlugin: CBPeripheralDelegate, CBPeripheralManagerDelegate {
-    
-    public func peripheralManager(peripheral: CBPeripheralManager, didReceiveReadRequest request: CBATTRequest)
-    {
-        print("XCODE didReceiveReadRequest")
-        // if request.characteristic.UUID.isEqual(characteristic.UUID)
-        // {
-            // Set the correspondent characteristic's value
-            // to the request
-            //request.value = characteristic.value
-           request.value =  advertiseCharacteristicValue.data(using: .utf8)
-            // Respond to the request
-            peripheralManager?.respond(
-                to: request,
-                withResult: .success)
-        // }
-    }
-    
-    /*
-    public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-        if (peripheral.state == .poweredOn && advertiseIt) {
-            // first remove all services
-            peripheralManager?.removeAllServices()
-            // next add all new services
-            for cbuuid in advertiseBlock! {
-                let serviceUUID = cbuuid
-                let service = CBMutableService(type: serviceUUID, primary: true)
-                
-                // add characteristics
-                let characteristicUUID = CBUUID(string: "00001800-0000-1000-8000-00805f9b34fb")
-                let properties: CBCharacteristicProperties = [.read]
-                let permissions: CBAttributePermissions = [.readable]
-                let characteristic = CBMutableCharacteristic(
-                    type: characteristicUUID,
-                    properties: properties,
-                    value: "Hello Hank from XCode".data(using: .utf8),
-                    permissions: permissions)
-                    
-                service.characteristics = [characteristic]
-                peripheralManager?.add(service)
-            }
-            peripheralManager?.startAdvertising([
-                CBAdvertisementDataServiceUUIDsKey : advertiseBlock!,
-                CBAdvertisementDataLocalNameKey : "HelloHankDevice"
-            ])
-            advertiseIt = false;
-
-        }
-    }
-     */
-    
-    public func updateCharacteristic(characteristicUUID: String) {
-        for characteristic in ownService!.characteristics ?? [] {
-            if(characteristic.uuid.uuidString == characteristicUUID) {
-                let timestamp = String(describing: NSDate().timeIntervalSince1970)
-                let value = timestamp.data(using: .utf8)
-                characteristic.setValue(value, forKey: characteristicUUID)
-            }
-        }
-    }
-
-    public func addCharacteristic(characteristicUUID: String) {
-        if(ownService == nil) {
-            print("XCODE addCharacteristic " + characteristicUUID)
-            let characteristicUUID = CBUUID(string: characteristicUUID)
-            let timestamp = String(describing: NSDate().timeIntervalSince1970)
-            let value = timestamp.data(using: .utf8)
-            let properties: CBCharacteristicProperties = [.read]
-            let permissions: CBAttributePermissions = [.readable]
-            let characteristic = CBMutableCharacteristic(
-                type: characteristicUUID,
-                properties: properties,
-                value: value,
-                permissions: permissions)
-            ownService!.characteristics = [characteristic]
-        } else {
-            print("XCODE updateCharacteristic " + characteristicUUID)
-            updateCharacteristic(characteristicUUID: characteristicUUID)
-        }
-    }
-    
-    public func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-        if (peripheral.state == .poweredOn && advertiseIt) {
-            // first remove all services
-            // peripheralManager?.removeAllServices()
-            // next add all new services
-            // let iterationUUID = CBUUID(string: "94167980-f909-527e-a4af-bc3155f586d3")
-            
-            if(ownService == nil) {
-                let serviceUUID = CBUUID(string: advertiseServiceUUID!)
-                ownService = CBMutableService(type: serviceUUID, primary: true)
-                peripheralManager?.add(ownService!)
-                peripheralManager?.startAdvertising([
-                    CBAdvertisementDataServiceUUIDsKey : [serviceUUID],
-                    CBAdvertisementDataLocalNameKey : "HelloHankDeviceNext"
-                ])
-            }
-            advertiseIt = false;
-        }
-    }
-    
-    func startAdvertise(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        let map = call.arguments as? Dictionary<String, Any>
-        advertiseServiceUUID = "11116E73-1C03-5DE6-9130-5F9925AE8AB4"
-        advertiseCharacteristicUUID = nil
-        advertiseCharacteristicValue = nil
-        advertiseIt = true;
-        peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
-        peripheralManagerDidUpdateState(peripheralManager!)
-        result(nil)
-    }
-    
-    
-    
-    /*
-    func startAdvertise(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        let map = call.arguments as? Dictionary<String, Any>
-        advertiseServiceUUID = map?["serviceUUID"] as? String
-        advertiseCharacteristicUUID = map?["characteristicUUID"] as? String
-        advertiseCharacteristicValue = map?["characteristicValue"] as? String
-        advertiseIt = true;
-        iteration += 1;
-        peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
-        peripheralManagerDidUpdateState(peripheralManager!)
-        result(nil)
-    }
-     */
-    /*
-    func startAdvertise(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        // start advertising
-        // let uuids = call.arguments as! Array<String>
-        let map = call.arguments as? Dictionary<String, Any>
-        let uuids = map?["uuids"] as! Array<String>
-        print("XCODE START ADVERTISE WITH ")
-        dump(uuids)
-        advertiseBlock = uuids.map({ (uuid) -> CBUUID in
-            return CBUUID(string: uuid);
-        })
-        advertiseIt = true;
-        peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
-        peripheralManagerDidUpdateState(peripheralManager!)
-        result(nil)
-    }
-     */
-    func stopAdvertise(_ call: FlutterMethodCall, _ result: @escaping FlutterResult){
-        if (peripheralManager != nil) {
-            print("Stop advertising")
-            peripheralManager?.stopAdvertising()
-            peripheralManager?.removeAllServices()
-        } else {
-            print("Cannot stop because periperalManager is nil")
-        }
-        result(nil)
-    }
-    
-    
-    
-    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        print("XCODE didDiscoverServices")
-
-          for service in peripheral.services ?? [] {
-            if (service.uuid.uuidString == "11116E73-1C03-5DE6-9130-5F9925AE8AB4" || 1 == 1) {
-                print("XCODE service 11116E73-1C03-5DE6-9130-5F9925AE8AB4 discovered")
-                addCharacteristic(characteristicUUID: "94167980-f909-527e-a4af-bc3155f586d3")
-            }
-          }
-      }
-
-    /*
-    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        var detectedServiceUUIDs: Array<String> = []
-        for service in peripheral.services ?? [] {
-            if self.cbuuids!.contains(service.uuid) {
-                detectedServiceUUIDs.append(service.uuid.uuidString);
-            }
-        }
-        var obj = peripherals[peripheral.identifier.uuidString]
-        obj?["detectedServiceUUIDs"] = detectedServiceUUIDs
-        print("XCODE Service detected :")
-        print(detectedServiceUUIDs);
-        
-        // now disconnect
-        // disconnect(peripheral: peripheral);
-        
-        // send discovered data back to Flutter
-        /*
-        if (self.eventSink != nil) {
-            do {
-                if(peripherals.count != 0) {
-                    let jsonData = try JSONSerialization.data(withJSONObject: obj!, options: .prettyPrinted)
-                    
-                    let jsonString = String(data: jsonData,   encoding: String.Encoding.ascii)!
-                    self.eventSink!(jsonString)
-                    
-                }
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-        */
-    }
-    */
-    public func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
-      print("Peripheral services changed...")
-      peripheral.discoverServices(nil)
-    }
-    
-    
-    
-    
-    /*
-     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-     guard error == nil else {
-     print("Error discovering characteristics...")
-     return
-     }
-     
-     guard let characteristics = service.characteristics, !characteristics.isEmpty else {
-     print("No characteristics found for service...")
-     return
-     }
-     
-     for characteristic in service.characteristics ?? [] {
-     // Subscribe to characteristic changes, etc...
-     }
-     }
-     */
-}
-
-
