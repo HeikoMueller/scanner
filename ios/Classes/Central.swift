@@ -5,22 +5,26 @@ import os
 class Central : NSObject {
     var centralManager: CBCentralManager!
 
-    var transferCharacteristic: CBMutableCharacteristic?
-    var connectedCentral: CBCentral?
-    var dataToSend = Data()
-    var sendDataIndex: Int = 0
+    var discoveredPeripheral: CBPeripheral?
+    var transferCharacteristic: CBCharacteristic?
+    var writeIterationsComplete = 0
+    var connectionIterationsComplete = 0
+    
+    let defaultIterations = 5     // change this value based on test usecase
+    
+    var data = Data()
     
     public func startScanning() {
-        if(peripheralManager == nil) {
-            peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
+        if(centralManager == nil) {
+            centralManager = CBCentralManager(delegate: self, queue: nil)
         }
     }
     public func stopScanning() {
-        if(peripheralManager != nil) {
+        if(centralManager != nil) {
             centralManager.stopScan()
-            os_log("Scanning stopped")
-            data.removeAll(keepingCapacity: false)
-            peripheralManager = nil;
+            print("Scanning stopped")
+            // data.removeAll(keepingCapacity: false)
+            centralManager = nil;
         }
     }
 
@@ -33,10 +37,10 @@ class Central : NSObject {
         
         let connectedPeripherals: [CBPeripheral] = (centralManager.retrieveConnectedPeripherals(withServices: [TransferService.serviceUUID]))
         
-        os_log("Found connected Peripherals with transfer service: %@", connectedPeripherals)
+        print("Found connected Peripherals with transfer service: %@", connectedPeripherals)
         
         if let connectedPeripheral = connectedPeripherals.last {
-            os_log("Connecting to peripheral %@", connectedPeripheral)
+            print("Connecting to peripheral %@", connectedPeripheral)
 			self.discoveredPeripheral = connectedPeripheral
             centralManager.connect(connectedPeripheral, options: nil)
         } else {
@@ -89,7 +93,7 @@ class Central : NSObject {
             let packetData = Data(bytes: &rawPacket, count: bytesToCopy)
 			
 			let stringFromData = String(data: packetData, encoding: .utf8)
-			os_log("Writing %d bytes: %s", bytesToCopy, String(describing: stringFromData))
+			print("Writing %d bytes: %s", bytesToCopy, String(describing: stringFromData))
 			
             discoveredPeripheral.writeValue(packetData, for: transferCharacteristic, type: .withoutResponse)
             
@@ -122,14 +126,14 @@ extension Peripheral : CBCentralManagerDelegate {
         switch central.state {
         case .poweredOn:
             // ... so start working with the peripheral
-            os_log("CBManager is powered on")
+            print("CBManager is powered on")
             retrievePeripheral()
         case .poweredOff:
-            os_log("CBManager is not powered on")
+            print("CBManager is not powered on")
             // In a real app, you'd deal with all the states accordingly
             return
         case .resetting:
-            os_log("CBManager is resetting")
+            print("CBManager is resetting")
             // In a real app, you'd deal with all the states accordingly
             return
         case .unauthorized:
@@ -137,26 +141,26 @@ extension Peripheral : CBCentralManagerDelegate {
             if #available(iOS 13.0, *) {
                 switch central.authorization {
                 case .denied:
-                    os_log("You are not authorized to use Bluetooth")
+                    print("You are not authorized to use Bluetooth")
                 case .restricted:
-                    os_log("Bluetooth is restricted")
+                    print("Bluetooth is restricted")
                 default:
-                    os_log("Unexpected authorization")
+                    print("Unexpected authorization")
                 }
             } else {
                 // Fallback on earlier versions
             }
             return
         case .unknown:
-            os_log("CBManager state is unknown")
+            print("CBManager state is unknown")
             // In a real app, you'd deal with all the states accordingly
             return
         case .unsupported:
-            os_log("Bluetooth is not supported on this device")
+            print("Bluetooth is not supported on this device")
             // In a real app, you'd deal with all the states accordingly
             return
         @unknown default:
-            os_log("A previously unknown central manager state occurred")
+            print("A previously unknown central manager state occurred")
             // In a real app, you'd deal with yet unknown cases that might occur in the future
             return
         }
@@ -174,11 +178,11 @@ extension Peripheral : CBCentralManagerDelegate {
         // Change the minimum RSSI value depending on your app’s use case.
         guard RSSI.intValue >= -50
             else {
-                os_log("Discovered perhiperal not in expected range, at %d", RSSI.intValue)
+                print("Discovered perhiperal not in expected range, at %d", RSSI.intValue)
                 return
         }
         
-        os_log("Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
+        print("Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
         
         // Device is in range - have we already seen it?
         if discoveredPeripheral != peripheral {
@@ -187,7 +191,7 @@ extension Peripheral : CBCentralManagerDelegate {
             discoveredPeripheral = peripheral
             
             // And finally, connect to the peripheral.
-            os_log("Connecting to perhiperal %@", peripheral)
+            print("Connecting to perhiperal %@", peripheral)
             centralManager.connect(peripheral, options: nil)
         }
     }
@@ -196,7 +200,7 @@ extension Peripheral : CBCentralManagerDelegate {
      *  If the connection fails for whatever reason, we need to deal with it.
      */
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        os_log("Failed to connect to %@. %s", peripheral, String(describing: error))
+        print("Failed to connect to %@. %s", peripheral, String(describing: error))
         cleanup()
     }
     
@@ -204,11 +208,11 @@ extension Peripheral : CBCentralManagerDelegate {
      *  We've connected to the peripheral, now we need to discover the services and characteristics to find the 'transfer' characteristic.
      */
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        os_log("Peripheral Connected")
+        print("Peripheral Connected")
         
         // Stop scanning
         centralManager.stopScan()
-        os_log("Scanning stopped")
+        print("Scanning stopped")
         
         // set iteration info
         connectionIterationsComplete += 1
@@ -228,14 +232,14 @@ extension Peripheral : CBCentralManagerDelegate {
      *  Once the disconnection happens, we need to clean up our local copy of the peripheral
      */
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        os_log("Perhiperal Disconnected")
+        print("Perhiperal Disconnected")
         discoveredPeripheral = nil
         
         // We're disconnected, so start scanning again
         if connectionIterationsComplete < defaultIterations {
             retrievePeripheral()
         } else {
-            os_log("Connection iterations completed")
+            print("Connection iterations completed")
         }
     }    
 }
