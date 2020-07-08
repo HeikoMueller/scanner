@@ -205,6 +205,11 @@ extension Central : CBCentralManagerDelegate {
         }
     }
 
+    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
+        print("XCODE CBCentralManager willRestoreState called")    
+    }
+
+
     /*
      *  If the connection fails for whatever reason, we need to deal with it.
      */
