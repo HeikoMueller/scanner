@@ -14,11 +14,15 @@ class Central : NSObject {
     
     var data = Data()
     
-    public func startScanning() {
-        if(centralManager == nil) {
-            centralManager = CBCentralManager(delegate: self, queue: nil)
-        }
+    override init() {
+        super.init()
+        centralManager = CBCentralManager(delegate: self, queue: nil)
     }
+
+    public func startScanning() {
+        print("XCODE Start scanning called without function")
+    }
+
     public func stopScanning() {
         if(centralManager != nil) {
             centralManager.stopScan()
@@ -83,23 +87,28 @@ class Central : NSObject {
             else { return }
         
         // check to see if number of iterations completed and peripheral can accept more data
-        while writeIterationsComplete < defaultIterations && discoveredPeripheral.canSendWriteWithoutResponse {
-                    
-            let mtu = discoveredPeripheral.maximumWriteValueLength (for: .withoutResponse)
-            var rawPacket = [UInt8]()
-            
-            let bytesToCopy: size_t = min(mtu, data.count)
-			data.copyBytes(to: &rawPacket, count: bytesToCopy)
-            let packetData = Data(bytes: &rawPacket, count: bytesToCopy)
-			
-			let stringFromData = String(data: packetData, encoding: .utf8)
-			print("Writing %d bytes: %s", bytesToCopy, String(describing: stringFromData))
-			
-            discoveredPeripheral.writeValue(packetData, for: transferCharacteristic, type: .withoutResponse)
-            
-            writeIterationsComplete += 1
-            
+        if #available(iOS 11.0, *) {
+            while writeIterationsComplete < defaultIterations && discoveredPeripheral.canSendWriteWithoutResponse {
+                        
+                let mtu = discoveredPeripheral.maximumWriteValueLength (for: .withoutResponse)
+                var rawPacket = [UInt8]()
+                
+                let bytesToCopy: size_t = min(mtu, data.count)
+                data.copyBytes(to: &rawPacket, count: bytesToCopy)
+                let packetData = Data(bytes: &rawPacket, count: bytesToCopy)
+                
+                let stringFromData = String(data: packetData, encoding: .utf8)
+                print("Writing %d bytes: %s", bytesToCopy, String(describing: stringFromData))
+                
+                discoveredPeripheral.writeValue(packetData, for: transferCharacteristic, type: .withoutResponse)
+                
+                writeIterationsComplete += 1
+                
+            }
+        } else {
+            print("writeIterationsComplete Fallback missing for < iOS 11.0")
         }
+
         
         if writeIterationsComplete == defaultIterations {
             // Cancel our subscription to the characteristic
