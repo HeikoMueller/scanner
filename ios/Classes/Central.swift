@@ -3,7 +3,7 @@ import CoreBluetooth
 import os
 
 class Central : NSObject {
-    var centralManager: CBCentralManager!
+    var centralManager: CBCentralManager?
 
     var discoveredPeripheral: CBPeripheral?
     var transferCharacteristic: CBCharacteristic?
@@ -16,7 +16,7 @@ class Central : NSObject {
     
     override init() {
         super.init()
-        centralManager = CBCentralManager(delegate: self, queue: nil)
+        centralManager = CBCentralManager(delegate: self, queue: nil, options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
     }
 
     public func startScanning() {
@@ -252,3 +252,128 @@ extension Peripheral : CBCentralManagerDelegate {
         }
     }    
 }
+
+
+extension Central: CBPeripheralDelegate {
+    // implementations of the CBPeripheralDelegate methods
+
+    /*
+     *  The peripheral letting us know when services have been invalidated.
+     */
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        
+        for service in invalidatedServices where service.uuid == TransferService.serviceUUID {
+            print("Transfer service is invalidated - rediscover services")
+            peripheral.discoverServices([TransferService.serviceUUID])
+        }
+    }
+
+    /*
+     *  The Transfer Service was discovered
+     */
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        if let error = error {
+            print("Error discovering services")
+            cleanup()
+            return
+        }
+        
+        // Discover the characteristic we want...
+        
+        // Loop through the newly filled peripheral.services array, just in case there's more than one.
+        guard let peripheralServices = peripheral.services else { return }
+        for service in peripheralServices {
+            peripheral.discoverCharacteristics([TransferService.characteristicUUID], for: service)
+        }
+    }
+    
+    /*
+     *  The Transfer characteristic was discovered.
+     *  Once this has been found, we want to subscribe to it, which lets the peripheral know we want the data it contains
+     */
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        // Deal with errors (if any).
+        if let error = error {
+            print("Error discovering characteristics")
+            cleanup()
+            return
+        }
+        
+        // Again, we loop through the array, just in case and check if it's the right one
+        guard let serviceCharacteristics = service.characteristics else { return }
+        for characteristic in serviceCharacteristics where characteristic.uuid == TransferService.characteristicUUID {
+            // If it is, subscribe to it
+            transferCharacteristic = characteristic
+            peripheral.setNotifyValue(true, for: characteristic)
+        }
+        
+        // Once this is complete, we just need to wait for the data to come in.
+    }
+    
+    /*
+     *   This callback lets us know more data has arrived via notification on the characteristic
+     */
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        // Deal with errors (if any)
+        if let error = error {
+            print("Error discovering characteristics: ")
+            cleanup()
+            return
+        }
+        
+        guard let characteristicData = characteristic.value,
+            let stringFromData = String(data: characteristicData, encoding: .utf8) else { return }
+        
+        print("Received data: " +  stringFromData)
+        
+        // Have we received the end-of-message token?
+        if stringFromData == "EOM" {
+            // End-of-message case: show the data.
+            // Dispatch the text view update to the main queue for updating the UI, because
+            // we don't know which thread this method will be called back on.
+            // // DispatchQueue.main.async() {
+            // //     self.textView.text = String(data: self.data, encoding: .utf8)
+            // // }
+            
+            // Write test data
+            writeData()
+        } else {
+            // Otherwise, just append the data to what we have previously received.
+            data.append(characteristicData)
+        }
+    }
+
+    /*
+     *  The peripheral letting us know whether our subscribe/unsubscribe happened or not
+     */
+    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+        // Deal with errors (if any)
+        if let error = error {
+            print("Error changing notification state:")
+            return
+        }
+        
+        // Exit if it's not the transfer characteristic
+        guard characteristic.uuid == TransferService.characteristicUUID else { return }
+        
+        if characteristic.isNotifying {
+            // Notification has started
+            print("Notification began on ")
+        } else {
+            // Notification has stopped, so disconnect from the peripheral
+            print("Notification stopped on ")
+            cleanup()
+        }
+        
+    }
+    
+    /*
+     *  This is called when peripheral is ready to accept more data when using write without response
+     */
+    func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        print("Peripheral is ready, send data")
+        writeData()
+    }
+    
+}
+
