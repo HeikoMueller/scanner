@@ -37,14 +37,14 @@ class Peripheral : NSObject {
 		}
 		return
         // First up, check if we're meant to be sending an EOM
-        /*
-        if PeripheralViewController.sendingEOM {
+        
+        if Peripheral.sendingEOM {
             // send it
             let didSend = peripheralManager.updateValue("EOM".data(using: .utf8)!, for: transferCharacteristic, onSubscribedCentrals: nil)
             // Did it send?
             if didSend {
                 // It did, so mark it as sent
-                PeripheralViewController.sendingEOM = false
+                Peripheral.sendingEOM = false
                 print("Sent: EOM")
             }
             // It didn't send, so we'll exit and wait for peripheralManagerIsReadyToUpdateSubscribers to call sendData again
@@ -89,7 +89,7 @@ class Peripheral : NSObject {
                 // It was - send an EOM
                 
                 // Set this so if the send fails, we'll send it next time
-                PeripheralViewController.sendingEOM = true
+                Peripheral.sendingEOM = true
                 
                 //Send it
                 let eomSent = peripheralManager.updateValue("EOM".data(using: .utf8)!,
@@ -97,13 +97,13 @@ class Peripheral : NSObject {
                 
                 if eomSent {
                     // It sent; we're all done
-                    PeripheralViewController.sendingEOM = false
+                    Peripheral.sendingEOM = false
                     print("Sent: EOM")
                 }
                 return
             }
         }
-        */
+        
     }
 
     private func setupPeripheral() {
@@ -147,7 +147,7 @@ extension Peripheral : CBPeripheralManagerDelegate {
      */
     internal func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         
-        advertisingSwitch.isEnabled = peripheral.state == .poweredOn
+        //// advertisingSwitch.isEnabled = peripheral.state == .poweredOn
         
         switch peripheral.state {
         case .poweredOn:
@@ -199,7 +199,7 @@ extension Peripheral : CBPeripheralManagerDelegate {
         print("Central subscribed to characteristic")
         
         // Get the data
-        dataToSend = textView.text.data(using: .utf8)!
+        dataToSend = "Hello Hank!".data(using: .utf8)!
         
         // Reset the index
         sendDataIndex = 0
@@ -239,7 +239,7 @@ extension Peripheral : CBPeripheralManagerDelegate {
             }
             
             print("Received write request of %d bytes: %s", requestValue.count, stringFromData)
-            self.textView.text = stringFromData
+            // self.textView.text = stringFromData
         }
     }
 }
