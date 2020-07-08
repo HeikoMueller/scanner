@@ -3,7 +3,7 @@ import CoreBluetooth
 import os
 
 class Central : NSObject {
-    var centralManager: CBCentralManager?
+    var centralManager: CBCentralManager!
 
     var discoveredPeripheral: CBPeripheral?
     var transferCharacteristic: CBCharacteristic?
@@ -121,7 +121,7 @@ class Central : NSObject {
 
 }
 
-extension Peripheral : CBCentralManagerDelegate {
+extension Central : CBCentralManagerDelegate {
     // implementations of the CBCentralManagerDelegate methods
 
     /*
