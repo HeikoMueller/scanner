@@ -2,9 +2,16 @@ import UIKit
 import CoreBluetooth
 import os
 
+/* What we expect from */
+
+
+
 class Central : NSObject {
     var centralManager: CBCentralManager!
-
+    private var shouldStartScanning: Bool = false
+    private var scanParams: Dictionary<String, Any>!
+    private var cbuuids: Array<CBUUID>?
+    
     var discoveredPeripheral: CBPeripheral?
     var transferCharacteristic: CBCharacteristic?
     var writeIterationsComplete = 0
@@ -14,24 +21,45 @@ class Central : NSObject {
     
     var data = Data()
     
+    /*
     override init() {
         super.init()
+        print("XCODE CENTRAL INIT")
         centralManager = CBCentralManager(delegate: self, queue: nil, options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
     }
+     */
 
-    public func startScanning() {
-        print("XCODE Start scanning called without function")
+    public func startScanning(params: Dictionary<String, Any>) {
+        print("Now Scanning...")
+        let serviceUuids = params["uuids"] as! Array<String>
+        self.cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
+            return CBUUID(string: uuid);
+        })
+        
+        shouldStartScanning = true
+        if(centralManager == nil) {
+        centralManager = CBCentralManager(delegate: self, queue: nil,                                           options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
+        }
+        centralManagerDidUpdateState(centralManager)
     }
 
     public func stopScanning() {
-        if(centralManager != nil) {
-            centralManager.stopScan()
-            print("Scanning stopped")
-            // data.removeAll(keepingCapacity: false)
-            centralManager = nil;
-        }
+            if (centralManager != nil) {
+                print("Stop Scanning...")
+                centralManager.stopScan()
+                // onAdvertisingStateChanged!(false)
+            } else {
+                print("Cannot stop because centralManager is nil")
+            }
+        
     }
+    
+    
 
+    
+    
+    
+    
 
     /*
      * We will first check if we are already connected to our counterpart
@@ -50,7 +78,9 @@ class Central : NSObject {
         } else {
             // We were not connected to our counterpart, so start scanning
             centralManager.scanForPeripherals(withServices: [TransferService.serviceUUID],
-                                               options: [CBCentralManagerScanOptionAllowDuplicatesKey: true])
+                                               options: [
+                                                CBCentralManagerScanOptionAllowDuplicatesKey: true,
+                                                CBCentralManagerScanOptionSolicitedServiceUUIDsKey: [TransferService.serviceUUID]])
         }
     }
     
@@ -132,47 +162,65 @@ extension Central : CBCentralManagerDelegate {
      */
     internal func centralManagerDidUpdateState(_ central: CBCentralManager) {
 
-        switch central.state {
-        case .poweredOn:
-            // ... so start working with the peripheral
-            print("CBManager is powered on")
-            retrievePeripheral()
-        case .poweredOff:
-            print("CBManager is not powered on")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        case .resetting:
-            print("CBManager is resetting")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        case .unauthorized:
-            // In a real app, you'd deal with all the states accordingly
-            if #available(iOS 13.0, *) {
-                switch central.authorization {
-                case .denied:
-                    print("You are not authorized to use Bluetooth")
-                case .restricted:
-                    print("Bluetooth is restricted")
-                default:
-                    print("Unexpected authorization")
+        if (central.state == .poweredOn && shouldStartScanning && cbuuids != nil) {
+                print("CBManager Central is powered on - START SCANNING")
+                centralManager.scanForPeripherals(withServices: cbuuids!,
+                                                   options: [
+                                                    CBCentralManagerScanOptionAllowDuplicatesKey: true,
+                                                    CBCentralManagerScanOptionSolicitedServiceUUIDsKey: cbuuids!
+                ])
+                shouldStartScanning = false
+        } else {
+            print("CENTRAL STATE IS NOT POWERED ON")
+            switch central.state {
+            case .poweredOn:
+                // ... so start working with the peripheral
+                print("CBManager Central is powered on")
+                // retrievePeripheral()
+                // startScanning()
+            case .poweredOff:
+                print("CBManager is not powered on")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            case .resetting:
+                print("CBManager is resetting")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            case .unauthorized:
+                // In a real app, you'd deal with all the states accordingly
+                if #available(iOS 13.0, *) {
+                    switch central.authorization {
+                    case .denied:
+                        print("You are not authorized to use Bluetooth")
+                    case .restricted:
+                        print("Bluetooth is restricted")
+                    default:
+                        print("Unexpected authorization")
+                    }
+                } else {
+                    // Fallback on earlier versions
                 }
-            } else {
-                // Fallback on earlier versions
+                return
+            case .unknown:
+                print("CBManager state is unknown")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            case .unsupported:
+                print("Bluetooth is not supported on this device")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            @unknown default:
+                print("A previously unknown central manager state occurred")
+                // In a real app, you'd deal with yet unknown cases that might occur in the future
+                return
             }
-            return
-        case .unknown:
-            print("CBManager state is unknown")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        case .unsupported:
-            print("Bluetooth is not supported on this device")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        @unknown default:
-            print("A previously unknown central manager state occurred")
-            // In a real app, you'd deal with yet unknown cases that might occur in the future
-            return
+
         }
+        
+        
+        
+        
+
     }
 
     /*
@@ -287,7 +335,11 @@ extension Central: CBPeripheralDelegate {
         
         // Loop through the newly filled peripheral.services array, just in case there's more than one.
         guard let peripheralServices = peripheral.services else { return }
+        
+        print("XCODE Service discovered")
         for service in peripheralServices {
+            print("XCODE Service discovered : " + service.uuid.uuidString)
+
             peripheral.discoverCharacteristics([TransferService.characteristicUUID], for: service)
         }
     }
