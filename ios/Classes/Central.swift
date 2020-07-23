@@ -2,7 +2,8 @@ import UIKit
 import CoreBluetooth
 import os
 
-/* What we expect from */
+/* SCANNING FOR PERIPHERALS */
+/* */
 
 
 
@@ -11,8 +12,9 @@ class Central : NSObject {
     private var shouldStartScanning: Bool = false
     private var scanParams: Dictionary<String, Any>!
     private var cbuuids: Array<CBUUID>?
+    private var discoveredPeripherals: Array<CBPeripheral> = []
     
-    var discoveredPeripheral: CBPeripheral?
+    //    var discoveredPeripheral: CBPeripheral?
     var transferCharacteristic: CBCharacteristic?
     var writeIterationsComplete = 0
     var connectionIterationsComplete = 0
@@ -22,15 +24,15 @@ class Central : NSObject {
     var data = Data()
     
     /*
-    override init() {
-        super.init()
-        print("XCODE CENTRAL INIT")
-        centralManager = CBCentralManager(delegate: self, queue: nil, options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
-    }
+     override init() {
+     super.init()
+     print("XCODE CENTRAL INIT")
+     centralManager = CBCentralManager(delegate: self, queue: nil, options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
+     }
      */
-
+    
     public func startScanning(params: Dictionary<String, Any>) {
-        print("Now Scanning...")
+        print("[CENTRAL] Now Scanning... $s", String(describing: params["uuids"]))
         let serviceUuids = params["uuids"] as! Array<String>
         self.cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
             return CBUUID(string: uuid);
@@ -38,29 +40,33 @@ class Central : NSObject {
         
         shouldStartScanning = true
         if(centralManager == nil) {
-        centralManager = CBCentralManager(delegate: self, queue: nil,                                           options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
+            centralManager = CBCentralManager(delegate: self, queue: nil)
+                //    options:[CBCentralManagerOptionRestoreIdentifierKey: "roktok.immu.dev"])
+                
         }
         centralManagerDidUpdateState(centralManager)
     }
-
+    
     public func stopScanning() {
-            if (centralManager != nil) {
-                print("Stop Scanning...")
-                centralManager.stopScan()
-                // onAdvertisingStateChanged!(false)
-            } else {
-                print("Cannot stop because centralManager is nil")
-            }
+        if (centralManager != nil) {
+            print("[CENTRAL] Stop Scanning...")
+            centralManager.stopScan()
+            // we clean up all connections for getting ready to re-detect peripherals in the next round
+            cleanup()
+            // onAdvertisingStateChanged!(false)
+        } else {
+            print("[CENTRAL] Cannot stop because centralManager is nil")
+        }
         
     }
     
     
-
     
     
     
     
-
+    
+    
     /*
      * We will first check if we are already connected to our counterpart
      * Otherwise, scan for peripherals - specifically for our service's 128bit CBUUID
@@ -69,16 +75,17 @@ class Central : NSObject {
         
         let connectedPeripherals: [CBPeripheral] = (centralManager.retrieveConnectedPeripherals(withServices: [TransferService.serviceUUID]))
         
-        print("Found connected Peripherals with transfer service: %@", connectedPeripherals)
+        print("[CENTRAL] Found connected Peripherals with transfer service: %@", connectedPeripherals)
         
         if let connectedPeripheral = connectedPeripherals.last {
-            print("Connecting to peripheral %@", connectedPeripheral)
-			self.discoveredPeripheral = connectedPeripheral
+            print("[CENTRAL] Connecting to peripheral %@", connectedPeripheral)
+            // self.discoveredPeripheral = connectedPeripheral
+            self.discoveredPeripherals.append(connectedPeripheral)
             centralManager.connect(connectedPeripheral, options: nil)
         } else {
             // We were not connected to our counterpart, so start scanning
             centralManager.scanForPeripherals(withServices: [TransferService.serviceUUID],
-                                               options: [
+                                              options: [
                                                 CBCentralManagerScanOptionAllowDuplicatesKey: true,
                                                 CBCentralManagerScanOptionSolicitedServiceUUIDsKey: [TransferService.serviceUUID]])
         }
@@ -90,37 +97,41 @@ class Central : NSObject {
      *  (didUpdateNotificationStateForCharacteristic will cancel the connection if a subscription is involved)
      */
     private func cleanup() {
+        print("[CENTRAL] cleanup called")
         // Don't do anything if we're not connected
-        guard let discoveredPeripheral = discoveredPeripheral,
-            case .connected = discoveredPeripheral.state else { return }
-        
-        for service in (discoveredPeripheral.services ?? [] as [CBService]) {
-            for characteristic in (service.characteristics ?? [] as [CBCharacteristic]) {
-                if characteristic.uuid == TransferService.characteristicUUID && characteristic.isNotifying {
-                    // It is notifying, so unsubscribe
-                    self.discoveredPeripheral?.setNotifyValue(false, for: characteristic)
+        for discoveredPeripheral in discoveredPeripherals {
+            if(discoveredPeripheral.state != .connected) { return }
+            
+            for service in (discoveredPeripheral.services ?? [] as [CBService]) {
+                for characteristic in (service.characteristics ?? [] as [CBCharacteristic]) {
+                    if characteristic.uuid == TransferService.characteristicUUID && characteristic.isNotifying {
+                        // It is notifying, so unsubscribe
+                        // self.discoveredPeripheral?.setNotifyValue(false, for: characteristic)
+                        discoveredPeripheral.setNotifyValue(false, for: characteristic)
+                    }
                 }
             }
+            
+            // If we've gotten this far, we're connected, but we're not subscribed, so we just disconnect
+            centralManager.cancelPeripheralConnection(discoveredPeripheral)
         }
-        
-        // If we've gotten this far, we're connected, but we're not subscribed, so we just disconnect
-        centralManager.cancelPeripheralConnection(discoveredPeripheral)
     }
     
     /*
      *  Write some test data to peripheral
      */
-    private func writeData() {
-    
-        guard let discoveredPeripheral = discoveredPeripheral,
-                let transferCharacteristic = transferCharacteristic
-            else { return }
+    private func writeData(peripheral: CBPeripheral) {
+        
+        //        guard let discoveredPeripheral = discoveredPeripheral,
+        //                let transferCharacteristic = transferCharacteristic
+        //            else { return }
         
         // check to see if number of iterations completed and peripheral can accept more data
+        
         if #available(iOS 11.0, *) {
-            while writeIterationsComplete < defaultIterations && discoveredPeripheral.canSendWriteWithoutResponse {
-                        
-                let mtu = discoveredPeripheral.maximumWriteValueLength (for: .withoutResponse)
+            while writeIterationsComplete < defaultIterations && peripheral.canSendWriteWithoutResponse {
+                
+                let mtu = peripheral.maximumWriteValueLength (for: .withoutResponse)
                 var rawPacket = [UInt8]()
                 
                 let bytesToCopy: size_t = min(mtu, data.count)
@@ -128,32 +139,26 @@ class Central : NSObject {
                 let packetData = Data(bytes: &rawPacket, count: bytesToCopy)
                 
                 let stringFromData = String(data: packetData, encoding: .utf8)
-                print("Writing %d bytes: %s", bytesToCopy, String(describing: stringFromData))
+                print("[CENTRAL] Writing %d bytes: %s", bytesToCopy, String(describing: stringFromData))
                 
-                discoveredPeripheral.writeValue(packetData, for: transferCharacteristic, type: .withoutResponse)
-                
+                peripheral.writeValue(packetData, for: transferCharacteristic!, type: .withoutResponse)
                 writeIterationsComplete += 1
-                
             }
         } else {
-            print("writeIterationsComplete Fallback missing for < iOS 11.0")
+            print("[CENTRAL] writeIterationsComplete Fallback missing for < iOS 11.0")
         }
-
+        
         
         if writeIterationsComplete == defaultIterations {
             // Cancel our subscription to the characteristic
-            discoveredPeripheral.setNotifyValue(false, for: transferCharacteristic)
+            peripheral.setNotifyValue(false, for: transferCharacteristic!)
         }
     }
-
-
-
-
 }
 
 extension Central : CBCentralManagerDelegate {
     // implementations of the CBCentralManagerDelegate methods
-
+    
     /*
      *  centralManagerDidUpdateState is a required protocol method.
      *  Usually, you'd check for other states to make sure the current device supports LE, is powered on, etc.
@@ -161,29 +166,29 @@ extension Central : CBCentralManagerDelegate {
      *  the Central is ready to be used.
      */
     internal func centralManagerDidUpdateState(_ central: CBCentralManager) {
-
+        
         if (central.state == .poweredOn && shouldStartScanning && cbuuids != nil) {
-                print("CBManager Central is powered on - START SCANNING")
-                centralManager.scanForPeripherals(withServices: cbuuids!,
-                                                   options: [
-                                                    CBCentralManagerScanOptionAllowDuplicatesKey: true,
-                                                    CBCentralManagerScanOptionSolicitedServiceUUIDsKey: cbuuids!
-                ])
-                shouldStartScanning = false
+            print("[CENTRAL] CBManager Central is powered on - START SCANNING $s", String(describing: cbuuids))
+            centralManager.scanForPeripherals(withServices: cbuuids!,
+                                              options: [
+                                                CBCentralManagerScanOptionAllowDuplicatesKey: true,
+                                                CBCentralManagerScanOptionSolicitedServiceUUIDsKey: cbuuids!
+            ])
+            shouldStartScanning = false
         } else {
-            print("CENTRAL STATE IS NOT POWERED ON")
+            print("[CENTRAL] CENTRAL STATE IS NOT POWERED ON")
             switch central.state {
             case .poweredOn:
                 // ... so start working with the peripheral
-                print("CBManager Central is powered on")
+                print("[CENTRAL] CBManager Central is powered on")
                 // retrievePeripheral()
-                // startScanning()
+            // startScanning()
             case .poweredOff:
-                print("CBManager is not powered on")
+                print("[CENTRAL] CBManager is not powered on")
                 // In a real app, you'd deal with all the states accordingly
                 return
             case .resetting:
-                print("CBManager is resetting")
+                print("[CENTRAL] CBManager is resetting")
                 // In a real app, you'd deal with all the states accordingly
                 return
             case .unauthorized:
@@ -191,38 +196,38 @@ extension Central : CBCentralManagerDelegate {
                 if #available(iOS 13.0, *) {
                     switch central.authorization {
                     case .denied:
-                        print("You are not authorized to use Bluetooth")
+                        print("[CENTRAL] You are not authorized to use Bluetooth")
                     case .restricted:
-                        print("Bluetooth is restricted")
+                        print("[CENTRAL] Bluetooth is restricted")
                     default:
-                        print("Unexpected authorization")
+                        print("[CENTRAL] Unexpected authorization")
                     }
                 } else {
                     // Fallback on earlier versions
                 }
                 return
             case .unknown:
-                print("CBManager state is unknown")
+                print("[CENTRAL] CBManager state is unknown")
                 // In a real app, you'd deal with all the states accordingly
                 return
             case .unsupported:
-                print("Bluetooth is not supported on this device")
+                print("[CENTRAL] Bluetooth is not supported on this device")
                 // In a real app, you'd deal with all the states accordingly
                 return
             @unknown default:
-                print("A previously unknown central manager state occurred")
+                print("[CENTRAL] A previously unknown central manager state occurred")
                 // In a real app, you'd deal with yet unknown cases that might occur in the future
                 return
             }
-
+            
         }
         
         
         
         
-
+        
     }
-
+    
     /*
      *  This callback comes whenever a peripheral that is advertising the transfer serviceUUID is discovered.
      *  We check the RSSI, to make sure it's close enough that we're interested in it, and if it is,
@@ -233,36 +238,81 @@ extension Central : CBCentralManagerDelegate {
         
         // Reject if the signal strength is too low to attempt data transfer.
         // Change the minimum RSSI value depending on your app’s use case.
-        guard RSSI.intValue >= -50
-            else {
-                print("Discovered perhiperal not in expected range, at %d", RSSI.intValue)
-                return
-        }
+        //        guard RSSI.intValue >= -50
+        //            else {
+        //                print("Discovered perhiperal not in expected range, at %d", RSSI.intValue)
+        //                return
+        //        }
         
-        print("Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
-        
+        // Hier wollen wir erstmal nach ServiceUUIDs filtern
+        // print("[CENTRAL] Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
         // Device is in range - have we already seen it?
-        if discoveredPeripheral != peripheral {
+        
+        // first we check if the peripheral already has been registered
+        if !discoveredPeripherals.contains(peripheral) {
+            // if not, we check for the serviceUuids we are interrested in
+            var detectedServiceUUIDS: Array<String>! = [];
+            var isInBackground: Bool = false;
             
-            // Save a local copy of the peripheral, so CoreBluetooth doesn't get rid of it.
-            discoveredPeripheral = peripheral
+            // first we check for serviceUUIDs in the overflow area
+            if advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] != nil {
+                if let overflowServiceUUIDs: [CBUUID?] = advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey]!  as? [CBUUID?] {
+                    for uuid in overflowServiceUUIDs {
+                        if self.cbuuids!.contains(uuid!) {
+                            detectedServiceUUIDS.append(uuid!.uuidString)
+                            isInBackground = true
+                        }
+                    }
+                }
+            }
             
-            // And finally, connect to the peripheral.
-            print("Connecting to perhiperal %@", peripheral)
-            centralManager.connect(peripheral, options: nil)
+            // if nothing has been detected yet, check the normal serviceUUIDs
+            if detectedServiceUUIDS.count == 0 {
+                if let serviceUUIDs: [CBUUID?] = advertisementData[CBAdvertisementDataServiceUUIDsKey]  as? [CBUUID?] {
+                    for uuid in serviceUUIDs {
+                        if self.cbuuids!.contains(uuid!) {
+                            detectedServiceUUIDS.append(uuid!.uuidString)
+                            isInBackground = false
+                        }
+                    }
+                }
+            }
+            
+            if detectedServiceUUIDS.count != 0 {
+                // we found something. Let's register the peripheral now
+                print("[CENTRAL] detectedServiceIds $s - $s", String(describing: detectedServiceUUIDS), String(describing: isInBackground))
+                
+                
+                // Save a local copy of the peripheral, so CoreBluetooth doesn't get rid of it.
+                discoveredPeripherals.append(peripheral)
+                // And finally, connect to the peripheral.
+                print("[CENTRAL] Connecting to perhiperal %s : $@", String(describing: peripheral.name), peripheral)
+                centralManager.connect(peripheral, options: nil)
+                
+                //            let jsonObject: [String: Any?] = [
+                //                "id": peripheral.identifier.uuidString,
+                //                "name": peripheral.name,
+                //                "rssi": RSSI,
+                //                "txLevel": advertisementData[CBAdvertisementDataTxPowerLevelKey],
+                //                "isInBackground" : isInBackground,
+                //                //                 "detectedServiceUUIDs" : detectedServiceUUIDS
+                //            ]
+                //
+                //            peripherals[peripheral.identifier.uuidString] = jsonObject;
+            }
         }
     }
-
-    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
-        print("XCODE CBCentralManager willRestoreState called")    
-    }
-
-
+    
+//    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
+//        print("[CENTRAL]  CBCentralManager willRestoreState called")
+//    }
+    
+    
     /*
      *  If the connection fails for whatever reason, we need to deal with it.
      */
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        print("Failed to connect to %@. %s", peripheral, String(describing: error))
+        print("[CENTRAL] Failed to connect to %@. %s", peripheral, String(describing: error))
         cleanup()
     }
     
@@ -270,11 +320,11 @@ extension Central : CBCentralManagerDelegate {
      *  We've connected to the peripheral, now we need to discover the services and characteristics to find the 'transfer' characteristic.
      */
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("Peripheral Connected")
+        print("[CENTRAL] Peripheral Connected")
         
-        // Stop scanning
-        centralManager.stopScan()
-        print("Scanning stopped")
+        // we do not stop scan here since we are interrested in more than one peripheral
+        // centralManager.stopScan()
+        // print("[CENTRAL] Scanning stopped")
         
         // set iteration info
         connectionIterationsComplete += 1
@@ -287,46 +337,48 @@ extension Central : CBCentralManagerDelegate {
         peripheral.delegate = self
         
         // Search only for services that match our UUID
-        peripheral.discoverServices([TransferService.serviceUUID])
+        peripheral.discoverServices(cbuuids!)
+        
     }
     
     /*
      *  Once the disconnection happens, we need to clean up our local copy of the peripheral
      */
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        print("Perhiperal Disconnected")
-        discoveredPeripheral = nil
+        print("[CENTRAL] Perhiperal Disconnected")
+        // discoveredPeripheral = nil
+        discoveredPeripherals = discoveredPeripherals.filter {$0 != peripheral}
         
         // We're disconnected, so start scanning again
-        if connectionIterationsComplete < defaultIterations {
-            retrievePeripheral()
-        } else {
-            print("Connection iterations completed")
-        }
+        //        if connectionIterationsComplete < defaultIterations {
+        //            retrievePeripheral()
+        //        } else {
+        //            print("Connection iterations completed")
+        //        }
     }    
 }
 
 
 extension Central: CBPeripheralDelegate {
     // implementations of the CBPeripheralDelegate methods
-
+    
     /*
      *  The peripheral letting us know when services have been invalidated.
      */
     func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
         
         for service in invalidatedServices where service.uuid == TransferService.serviceUUID {
-            print("Transfer service is invalidated - rediscover services")
+            print("[CENTRAL] Transfer service is invalidated - rediscover services")
             peripheral.discoverServices([TransferService.serviceUUID])
         }
     }
-
+    
     /*
      *  The Transfer Service was discovered
      */
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let error = error {
-            print("Error discovering services")
+            print("[CENTRAL] Error discovering services")
             cleanup()
             return
         }
@@ -336,10 +388,10 @@ extension Central: CBPeripheralDelegate {
         // Loop through the newly filled peripheral.services array, just in case there's more than one.
         guard let peripheralServices = peripheral.services else { return }
         
-        print("XCODE Service discovered")
+        print("[CENTRAL] Service discovered")
         for service in peripheralServices {
-            print("XCODE Service discovered : " + service.uuid.uuidString)
-
+            print("[CENTRAL] Service discovered : " + service.uuid.uuidString)
+            
             peripheral.discoverCharacteristics([TransferService.characteristicUUID], for: service)
         }
     }
@@ -351,7 +403,7 @@ extension Central: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         // Deal with errors (if any).
         if let error = error {
-            print("Error discovering characteristics")
+            print("[CENTRAL] Error discovering characteristics")
             cleanup()
             return
         }
@@ -373,7 +425,7 @@ extension Central: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         // Deal with errors (if any)
         if let error = error {
-            print("Error discovering characteristics: ")
+            print("[CENTRAL] Error discovering characteristics: ")
             cleanup()
             return
         }
@@ -381,7 +433,7 @@ extension Central: CBPeripheralDelegate {
         guard let characteristicData = characteristic.value,
             let stringFromData = String(data: characteristicData, encoding: .utf8) else { return }
         
-        print("Received data: " +  stringFromData)
+        print("[CENTRAL] Received data: " +  stringFromData)
         
         // Have we received the end-of-message token?
         if stringFromData == "EOM" {
@@ -393,20 +445,20 @@ extension Central: CBPeripheralDelegate {
             // // }
             
             // Write test data
-            writeData()
+            writeData(peripheral: peripheral)
         } else {
             // Otherwise, just append the data to what we have previously received.
             data.append(characteristicData)
         }
     }
-
+    
     /*
      *  The peripheral letting us know whether our subscribe/unsubscribe happened or not
      */
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
         // Deal with errors (if any)
         if let error = error {
-            print("Error changing notification state:")
+            print("[CENTRAL] Error changing notification state:")
             return
         }
         
@@ -415,11 +467,11 @@ extension Central: CBPeripheralDelegate {
         
         if characteristic.isNotifying {
             // Notification has started
-            print("Notification began on ")
+            print("[CENTRAL] Notification began on ")
         } else {
             // Notification has stopped, so disconnect from the peripheral
-            print("Notification stopped on ")
-            cleanup()
+            print("[CENTRAL] Notification stopped on ")
+            // cleanup()
         }
         
     }
@@ -428,8 +480,8 @@ extension Central: CBPeripheralDelegate {
      *  This is called when peripheral is ready to accept more data when using write without response
      */
     func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
-        print("Peripheral is ready, send data")
-        writeData()
+        print("[CENTRAL] Peripheral is ready, send data")
+        writeData(peripheral: peripheral)
     }
     
 }

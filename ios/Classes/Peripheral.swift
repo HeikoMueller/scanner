@@ -3,36 +3,37 @@ import CoreBluetooth
 import os
 
 class Peripheral : NSObject {
-
+    
     var peripheralManager: CBPeripheralManager!
     var shouldStartAdvertise: Bool = false
     private var advertiseParams: Dictionary<String, Any>!
-    // private var dataToBeAdvertised: [String: Array<String>]!
+//    private var dataToBeAdvertised: [String: Array<String>]!
     private var dataToBeAdvertised: [String: [CBUUID]]!
-
+    private var peripheralSetUp: Bool = false
     
     
     var transferCharacteristic: CBMutableCharacteristic?
     var connectedCentral: CBCentral?
     var dataToSend = Data()
     var sendDataIndex: Int = 0
-
+    
     override init() {
         super.init()
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
     }
-
+    
     public func startAdvertising(params: Dictionary<String, Any>) {
+        print("[PERIPHERAL] Start Advertising Called")
         let serviceUuids = params["uuids"] as! Array<String>
         // peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: serviceUuids])
-        //dataToBeAdvertised = [
-        //    CBAdvertisementDataServiceUUIDsKey : serviceUuids,
-        //]
+//        dataToBeAdvertised = [
+//            CBAdvertisementDataServiceUUIDsKey : serviceUuids,
+//        ]
         let cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
-          return CBUUID(string: uuid);
+            return CBUUID(string: uuid);
         })
         dataToBeAdvertised = [
-             CBAdvertisementDataServiceUUIDsKey : cbuuids,
+            CBAdvertisementDataServiceUUIDsKey : cbuuids,
         ]
         
         var services: [Dictionary<String, Any>] = []
@@ -46,24 +47,24 @@ class Peripheral : NSObject {
         shouldStartAdvertise = true
         peripheralManagerDidUpdateState(peripheralManager)
     }
-
+    
     public func stopAdvertising() {
         peripheralManager.stopAdvertising()
     }
-
+    
     // MARK: - Helper Methods
-
+    
     /*
      *  Sends the next amount of data to the connected central
      */
     static var sendingEOM = false
     
     private func sendData() {
-		
-		guard let transferCharacteristic = transferCharacteristic else {
-			return
-		}
-		return
+        
+        guard let transferCharacteristic = transferCharacteristic else {
+            return
+        }
+        
         // First up, check if we're meant to be sending an EOM
         
         if Peripheral.sendingEOM {
@@ -73,7 +74,7 @@ class Peripheral : NSObject {
             if didSend {
                 // It did, so mark it as sent
                 Peripheral.sendingEOM = false
-                print("Sent: EOM")
+                print("[PERIPHERAL] Sent: EOM")
             }
             // It didn't send, so we'll exit and wait for peripheralManagerIsReadyToUpdateSubscribers to call sendData again
             return
@@ -108,7 +109,7 @@ class Peripheral : NSObject {
             }
             
             let stringFromData = String(data: chunk, encoding: .utf8)
-            print("Sent %d bytes: %s", chunk.count, String(describing: stringFromData))
+            print("[PERIPHERAL] Sent %d bytes: %s", chunk.count, String(describing: stringFromData))
             
             // It did send, so update our index
             sendDataIndex += amountToSend
@@ -121,21 +122,21 @@ class Peripheral : NSObject {
                 
                 //Send it
                 let eomSent = peripheralManager.updateValue("EOM".data(using: .utf8)!,
-                                                             for: transferCharacteristic, onSubscribedCentrals: nil)
+                                                            for: transferCharacteristic, onSubscribedCentrals: nil)
                 
                 if eomSent {
                     // It sent; we're all done
                     Peripheral.sendingEOM = false
-                    print("Sent: EOM")
+                    print("[PERIPHERAL] Sent: EOM")
                 }
                 return
             }
         }
         
     }
-
+    
     private func setupPeripheral() {
-        print("XCODE SETUP PERIPHERAL")
+        print("[PERIPHERAL] XCODE SETUP PERIPHERAL")
         // Build our service.
         
         if let services = advertiseParams!["services"] as! Array<Dictionary<String,Any>>? {
@@ -143,9 +144,9 @@ class Peripheral : NSObject {
                 let cbuuid = CBUUID(string:service["serviceUuid"] as! String)
                 // Start with the CBMutableCharacteristic.
                 let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID,
-                                                                 properties: [.notify, .writeWithoutResponse],
-                                                                 value: nil,
-                                                                 permissions: [.readable, .writeable])
+                                                                     properties: [.notify, .writeWithoutResponse],
+                                                                     value: nil,
+                                                                     permissions: [.readable, .writeable])
                 
                 // Create a service from the characteristic.
                 let transferService = CBMutableService(type: cbuuid, primary: true)
@@ -161,21 +162,14 @@ class Peripheral : NSObject {
                 self.transferCharacteristic = transferCharacteristic
             }
         }
-
-            
-            
-            
-            
-        }
-        
-        
-
+        peripheralSetUp = true;
     }
+}
 
 
 extension Peripheral : CBPeripheralManagerDelegate {
     // implementations of the CBPeripheralManagerDelegate methods
-
+    
     /*
      *  Required protocol method.  A full app should take care of all the possible states,
      *  but we're just waiting for to know when the CBPeripheralManager is ready
@@ -186,23 +180,25 @@ extension Peripheral : CBPeripheralManagerDelegate {
      */
     internal func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         if (peripheral.state == .poweredOn && shouldStartAdvertise &&  dataToBeAdvertised != nil) {
-            print("Start advertising ...")
-            setupPeripheral()
-            print("Peripheral SET UP ...")
+            print("[PERIPHERAL] Start advertising ...")
+            if(!peripheralSetUp) {
+                print("[PERIPHERAL] Peripheral SET UP ...")
+                setupPeripheral()
+            }
             peripheralManager.startAdvertising(dataToBeAdvertised)
             shouldStartAdvertise = false
         } else {
             switch peripheral.state {
             case .poweredOn:
                 // ... so start working with the peripheral
-                print("CBManager is powered on")
-                // setupPeripheral()
+                print("[PERIPHERAL] CBManager is powered on")
+            // setupPeripheral()
             case .poweredOff:
-                print("CBManager is not powered on")
+                print("[PERIPHERAL] CBManager is not powered on")
                 // In a real app, you'd deal with all the states accordingly
                 return
             case .resetting:
-                print("CBManager is resetting")
+                print("[PERIPHERAL] CBManager is resetting")
                 // In a real app, you'd deal with all the states accordingly
                 return
             case .unauthorized:
@@ -210,43 +206,43 @@ extension Peripheral : CBPeripheralManagerDelegate {
                 if #available(iOS 13.0, *) {
                     switch peripheral.authorization {
                     case .denied:
-                        print("You are not authorized to use Bluetooth")
+                        print("[PERIPHERAL] You are not authorized to use Bluetooth")
                     case .restricted:
-                        print("Bluetooth is restricted")
+                        print("[PERIPHERAL] Bluetooth is restricted")
                     default:
-                        print("Unexpected authorization")
+                        print("[PERIPHERAL] Unexpected authorization")
                     }
                 } else {
                     // Fallback on earlier versions
                 }
                 return
             case .unknown:
-                print("CBManager state is unknown")
+                print("[PERIPHERAL] CBManager state is unknown")
                 // In a real app, you'd deal with all the states accordingly
                 return
             case .unsupported:
-                print("Bluetooth is not supported on this device")
+                print("[PERIPHERAL] Bluetooth is not supported on this device")
                 // In a real app, you'd deal with all the states accordingly
                 return
             @unknown default:
-                print("A previously unknown peripheral manager state occurred")
+                print("[PERIPHERAL] A previously unknown peripheral manager state occurred")
                 // In a real app, you'd deal with yet unknown cases that might occur in the future
                 return
             }
-
+            
         }
         //// advertisingSwitch.isEnabled = peripheral.state == .poweredOn
         
     }
-
+    
     /*
      *  Catch when someone subscribes to our characteristic, then start sending them data
      */
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
-        print("Central subscribed to characteristic")
+        print("[PERIPHERAL] Central subscribed to characteristic")
         
         // Get the data
-        dataToSend = "Hello Hank!".data(using: .utf8)!
+        dataToSend = "Hello Hank from PERIPHERAL!".data(using: .utf8)!
         
         // Reset the index
         sendDataIndex = 0
@@ -262,7 +258,7 @@ extension Peripheral : CBPeripheralManagerDelegate {
      *  Recognize when the central unsubscribes
      */
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
-        print("Central unsubscribed from characteristic")
+        print("[PERIPHERAL] Central unsubscribed from characteristic")
         connectedCentral = nil
     }
     
@@ -285,10 +281,8 @@ extension Peripheral : CBPeripheralManagerDelegate {
                     continue
             }
             
-            print("Received write request of %d bytes: %s", requestValue.count, stringFromData)
+            print("[PERIPHERAL] Received write request of %d bytes: %s", requestValue.count, stringFromData)
             // self.textView.text = stringFromData
         }
     }
 }
-
-
