@@ -7,7 +7,7 @@ import CoreBluetooth
 
 public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     
-    private var peripheral = Peripheral()
+    // private var peripheral = Peripheral()
     private var central = Central()
 
 
@@ -31,10 +31,12 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             startScanning(call, result)
         case "stopScanning":
             stopScanning(call, result)
+        /*
         case "startAdvertising":
             startAdvertising(call, result)
         case "stopAdvertising":
             stopAdvertising(call, result)
+        */
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -53,15 +55,18 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 
     func startScanning(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         // let uuids = call.arguments as! Array<String>
-        // let map = call.arguments as? Dictionary<String, Any>
+        let params = (call.arguments as? Dictionary<String, Any>)!
         // let uuids = map?["uuids"] as! Array<String>
-        central.startScanning();
+        print("SWIFT SCANNER PLUGIN - START SCANNING CALLED")
+        central.startScanning(params: params);
         result(nil)
     }
     func stopScanning(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         central.stopScanning();
         result(nil)
     }
+    
+    /*
     func startAdvertising(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         peripheral.startAdvertising();
         result(nil)
@@ -70,4 +75,5 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         peripheral.stopAdvertising();
         result(nil)
     }
+     */
 }

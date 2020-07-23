@@ -40,10 +40,7 @@ class Scanner {
   final MethodChannel _methodChannel;
   final EventChannel _eventChannel;
 
-  Future<void> startScanning({@required String serviceUUID}) async {
-    Map params = <String, dynamic>{
-      "serviceUUID": serviceUUID,
-    };
+  Future<void> startScanning({@required Map params}) async {
     try {
       await _methodChannel.invokeMethod('startScanning', params);
     } on PlatformException catch(err){
