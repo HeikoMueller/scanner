@@ -7,7 +7,7 @@ import CoreBluetooth
 
 public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     
-    // private var peripheral = Peripheral()
+    private var peripheral = Peripheral()
     private var central = Central()
 
 
@@ -31,12 +31,10 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             startScanning(call, result)
         case "stopScanning":
             stopScanning(call, result)
-        /*
         case "startAdvertising":
             startAdvertising(call, result)
         case "stopAdvertising":
             stopAdvertising(call, result)
-        */
         default:
             result(FlutterMethodNotImplemented)
         }
