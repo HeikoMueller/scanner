@@ -58,12 +58,8 @@ class Scanner {
       _log.error(TAG,"Stop Scanning - CATCH Details : " + err.details.toString());
     } 
   }
-  Future<void> startAdvertising({@required String serviceUUID, @required String characteristicUUID, @required String characteristicValue}) async {
-    Map params = <String, dynamic>{
-      "serviceUUID": serviceUUID,
-      "characteristicUUID": characteristicUUID,
-      "characteristicValue": characteristicValue
-    };
+  //Future<void> startAdvertising({@required String serviceUUID, @required String characteristicUUID, @required String characteristicValue}) async {
+  Future<void> startAdvertising({@required Map params}) async {
     try {
       await _methodChannel.invokeMethod('startAdvertising', params);
     } on PlatformException catch(err){

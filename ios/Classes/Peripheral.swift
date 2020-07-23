@@ -16,9 +16,11 @@ class Peripheral : NSObject {
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
     }
 
-    public func startAdvertising() {
-        peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [TransferService.serviceUUID]])
+    public func startAdvertising(params: Dictionary<String, Any>) {
+        let serviceUuid = params["uuid"] as! String
+        peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [serviceUuid]])
     }
+
     public func stopAdvertising() {
         peripheralManager.stopAdvertising()
     }

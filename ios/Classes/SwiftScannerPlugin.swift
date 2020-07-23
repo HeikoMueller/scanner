@@ -65,15 +65,17 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         central.stopScanning();
         result(nil)
     }
-    
-    /*
     func startAdvertising(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        peripheral.startAdvertising();
+        let params = (call.arguments as? Dictionary<String, Any>)!
+        print("SWIFT SCANNER PLUGIN - START ADVERTISING CALLED")
+        peripheral.startAdvertising(params: params);
         result(nil)
     }
+
+    /*
     func stopAdvertising(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         peripheral.stopAdvertising();
         result(nil)
     }
-     */
+    */
 }
