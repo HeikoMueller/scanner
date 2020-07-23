@@ -70,10 +70,9 @@ public class SwiftScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
         result(nil)
     }
 
-    /*
+
     func stopAdvertising(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         peripheral.stopAdvertising();
         result(nil)
     }
-    */
 }

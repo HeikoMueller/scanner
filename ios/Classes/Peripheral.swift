@@ -17,8 +17,8 @@ class Peripheral : NSObject {
     }
 
     public func startAdvertising(params: Dictionary<String, Any>) {
-        let serviceUuid = params["uuid"] as! String
-        peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [serviceUuid]])
+        let serviceUuids = params["uuids"] as! Array<String>
+        peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: serviceUuids)
     }
 
     public func stopAdvertising() {
