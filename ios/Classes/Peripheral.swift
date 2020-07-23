@@ -5,7 +5,13 @@ import os
 class Peripheral : NSObject {
 
     var peripheralManager: CBPeripheralManager!
+    var shouldStartAdvertise: Bool = false
+    private var advertiseParams: Dictionary<String, Any>!
+    // private var dataToBeAdvertised: [String: Array<String>]!
+    private var dataToBeAdvertised: [String: [CBUUID]]!
 
+    
+    
     var transferCharacteristic: CBMutableCharacteristic?
     var connectedCentral: CBCentral?
     var dataToSend = Data()
@@ -18,7 +24,27 @@ class Peripheral : NSObject {
 
     public func startAdvertising(params: Dictionary<String, Any>) {
         let serviceUuids = params["uuids"] as! Array<String>
-        peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: serviceUuids])
+        // peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: serviceUuids])
+        //dataToBeAdvertised = [
+        //    CBAdvertisementDataServiceUUIDsKey : serviceUuids,
+        //]
+        let cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
+          return CBUUID(string: uuid);
+        })
+        dataToBeAdvertised = [
+             CBAdvertisementDataServiceUUIDsKey : cbuuids,
+        ]
+        
+        var services: [Dictionary<String, Any>] = []
+        for serviceUuid in serviceUuids {
+            let service: Dictionary<String, Any> = ["serviceUuid":serviceUuid]
+            services.append(service)
+        }
+        advertiseParams = [
+            "services" : services
+        ]
+        shouldStartAdvertise = true
+        peripheralManagerDidUpdateState(peripheralManager)
     }
 
     public func stopAdvertising() {
@@ -109,32 +135,43 @@ class Peripheral : NSObject {
     }
 
     private func setupPeripheral() {
-        
+        print("XCODE SETUP PERIPHERAL")
         // Build our service.
         
-        // Start with the CBMutableCharacteristic.
-        let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID,
-                                                         properties: [.notify, .writeWithoutResponse],
-                                                         value: nil,
-                                                         permissions: [.readable, .writeable])
+        if let services = advertiseParams!["services"] as! Array<Dictionary<String,Any>>? {
+            for service in services {
+                let cbuuid = CBUUID(string:service["serviceUuid"] as! String)
+                // Start with the CBMutableCharacteristic.
+                let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID,
+                                                                 properties: [.notify, .writeWithoutResponse],
+                                                                 value: nil,
+                                                                 permissions: [.readable, .writeable])
+                
+                // Create a service from the characteristic.
+                let transferService = CBMutableService(type: cbuuid, primary: true)
+                
+                // Add the characteristic to the service.
+                transferService.characteristics = [transferCharacteristic]
+                
+                // And add it to the peripheral manager.
+                peripheralManager.add(transferService)
+                
+                // Save the characteristic for later.
+                // TODO : multiple transfer characteristics
+                self.transferCharacteristic = transferCharacteristic
+            }
+        }
+
+            
+            
+            
+            
+        }
         
-        // Create a service from the characteristic.
-        let transferService = CBMutableService(type: TransferService.serviceUUID, primary: true)
         
-        // Add the characteristic to the service.
-        transferService.characteristics = [transferCharacteristic]
-        
-        // And add it to the peripheral manager.
-        peripheralManager.add(transferService)
-        
-        // Save the characteristic for later.
-        self.transferCharacteristic = transferCharacteristic
 
     }
 
-
-
-}
 
 extension Peripheral : CBPeripheralManagerDelegate {
     // implementations of the CBPeripheralManagerDelegate methods
@@ -148,50 +185,58 @@ extension Peripheral : CBPeripheralManagerDelegate {
      *  your app is allowed to use bluetooth
      */
     internal func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-        
+        if (peripheral.state == .poweredOn && shouldStartAdvertise &&  dataToBeAdvertised != nil) {
+            print("Start advertising ...")
+            setupPeripheral()
+            print("Peripheral SET UP ...")
+            peripheralManager.startAdvertising(dataToBeAdvertised)
+            shouldStartAdvertise = false
+        } else {
+            switch peripheral.state {
+            case .poweredOn:
+                // ... so start working with the peripheral
+                print("CBManager is powered on")
+                // setupPeripheral()
+            case .poweredOff:
+                print("CBManager is not powered on")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            case .resetting:
+                print("CBManager is resetting")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            case .unauthorized:
+                // In a real app, you'd deal with all the states accordingly
+                if #available(iOS 13.0, *) {
+                    switch peripheral.authorization {
+                    case .denied:
+                        print("You are not authorized to use Bluetooth")
+                    case .restricted:
+                        print("Bluetooth is restricted")
+                    default:
+                        print("Unexpected authorization")
+                    }
+                } else {
+                    // Fallback on earlier versions
+                }
+                return
+            case .unknown:
+                print("CBManager state is unknown")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            case .unsupported:
+                print("Bluetooth is not supported on this device")
+                // In a real app, you'd deal with all the states accordingly
+                return
+            @unknown default:
+                print("A previously unknown peripheral manager state occurred")
+                // In a real app, you'd deal with yet unknown cases that might occur in the future
+                return
+            }
+
+        }
         //// advertisingSwitch.isEnabled = peripheral.state == .poweredOn
         
-        switch peripheral.state {
-        case .poweredOn:
-            // ... so start working with the peripheral
-            print("CBManager is powered on")
-            setupPeripheral()
-        case .poweredOff:
-            print("CBManager is not powered on")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        case .resetting:
-            print("CBManager is resetting")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        case .unauthorized:
-            // In a real app, you'd deal with all the states accordingly
-            if #available(iOS 13.0, *) {
-                switch peripheral.authorization {
-                case .denied:
-                    print("You are not authorized to use Bluetooth")
-                case .restricted:
-                    print("Bluetooth is restricted")
-                default:
-                    print("Unexpected authorization")
-                }
-            } else {
-                // Fallback on earlier versions
-            }
-            return
-        case .unknown:
-            print("CBManager state is unknown")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        case .unsupported:
-            print("Bluetooth is not supported on this device")
-            // In a real app, you'd deal with all the states accordingly
-            return
-        @unknown default:
-            print("A previously unknown peripheral manager state occurred")
-            // In a real app, you'd deal with yet unknown cases that might occur in the future
-            return
-        }
     }
 
     /*
