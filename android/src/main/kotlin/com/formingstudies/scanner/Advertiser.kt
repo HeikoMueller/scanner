@@ -303,7 +303,7 @@ class Advertiser {
         }   
     }
     
-    fun start(data: Data) {
+    fun startAdvertising(data: Data) {
         // Log.i(TAG, "START ADVERTISING " + data.uuid)
 
         val settings = buildAdvertiseSettings()
@@ -333,7 +333,7 @@ class Advertiser {
 //        return checkTransmissionSupported(context)
 //    }
 
-    fun stop() {
+    fun stopAdvertising() {
         mBluetoothLeAdvertiser!!.stopAdvertising(mAdvertiseCallback)
         mBluetoothGattServer!!.clearServices()
         advertiseCallback = null

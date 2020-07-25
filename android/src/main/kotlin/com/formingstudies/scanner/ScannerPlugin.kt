@@ -8,6 +8,7 @@ import io.flutter.plugin.common.*
 import io.flutter.Log
 
 
+
 /** ScannerPlugin */
 class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
 
@@ -64,16 +65,16 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
       stopScanning(result)
     } else if (call.method == "startAdvertising") {
       Log.i(TAG, "ANDROID startAdvertising called")
-      startAdvertise(call, result)
+      startAdvertising(call, result)
     } else if (call.method == "stopAdvertising") {
       Log.i(TAG, "ANDROID stopAdvertising called")
-      stopAdvertise(result)
+      stopAdvertising(result)
     } else {
       result.notImplemented()
     }
   }
 
-  private fun startAdvertise(call: MethodCall, result: MethodChannel.Result) {
+  private fun startAdvertising(call: MethodCall, result: MethodChannel.Result) {
     Log.i(TAG, "startAdvertise in ScannerPlugin called")
     if (call.arguments !is Map<*, *>) {
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
@@ -85,17 +86,17 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
       arguments["characteristicValue"] as String?
     )
     try {
-      advertiser!!.start(advertiseData)
+      advertiser!!.startAdvertising(advertiseData)
     } catch(err: Exception) {
       Log.e(TAG, "Error in startAdvertise" + err.toString())
     }
     result.success(null)
   }
 
-  private fun stopAdvertise(result: MethodChannel.Result) {
+  private fun stopAdvertising(result: MethodChannel.Result) {
     Log.i(TAG, "stopAdvertise in ScannerPlugin called")
     try {
-      advertiser!!.stop()
+      advertiser!!.stopAdvertising()
     } catch(err: Exception) {
       Log.e(TAG, err.toString())
     }
@@ -115,13 +116,13 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     val scanData = Data(
       arguments["serviceUUID"] as String
     )
-    scanner!!.start(scanData)
+    scanner!!.startScanning(scanData)
     result.success(null)
   }
 
   private fun stopScanning(result: MethodChannel.Result) {
     Log.i(TAG, "stopScanning in ScannerPlugin called")
-    scanner!!.stop()
+    scanner!!.stopScanning()
     result.success(null)
   }
 

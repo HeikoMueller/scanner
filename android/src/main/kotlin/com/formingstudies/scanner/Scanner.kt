@@ -47,7 +47,7 @@ class Scanner {
     }
     
 //    fun start(uuids: Array<String>) {
-    fun start(data: Data) {
+    fun startScanning(data: Data) {
         Log.i(TAG, "ANDROID SCANNER START")
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
             Log.i(TAG, "API LEVEL <21")
@@ -64,7 +64,7 @@ class Scanner {
 
         }
     }
-    fun stop() {
+    fun stopScanning() {
         Log.i(TAG, "ANDROID SCANNER STOP")
         scanCallback = null
 

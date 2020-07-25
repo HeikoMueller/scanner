@@ -2,19 +2,17 @@ import UIKit
 import CoreBluetooth
 import os
 
-/* SCANNING FOR PERIPHERALS */
-/* */
-
-
+/* SCANNING FOR PERIPHERALS new version */
 
 class Central : NSObject {
     var centralManager: CBCentralManager!
     private var shouldStartScanning: Bool = false
     private var scanParams: Dictionary<String, Any>!
     private var cbuuids: Array<CBUUID>?
-    private var discoveredPeripherals: Array<CBPeripheral> = []
+//    private var discoveredPeripherals: Array<CBPeripheral> = []
     
-    //    var discoveredPeripheral: CBPeripheral?
+    private var currentlyDiscoveredPeripheral: CBPeripheral?
+    
     var transferCharacteristic: CBCharacteristic?
     var writeIterationsComplete = 0
     var connectionIterationsComplete = 0
@@ -48,6 +46,7 @@ class Central : NSObject {
     }
     
     public func stopScanning() {
+        shouldStartScanning = false
         if (centralManager != nil) {
             print("[CENTRAL] Stop Scanning...")
             centralManager.stopScan()
@@ -73,21 +72,29 @@ class Central : NSObject {
      */
     private func retrievePeripheral() {
         
-        let connectedPeripherals: [CBPeripheral] = (centralManager.retrieveConnectedPeripherals(withServices: [TransferService.serviceUUID]))
+        let connectedPeripherals: [CBPeripheral] = (centralManager.retrieveConnectedPeripherals(withServices: cbuuids!))
         
-        print("[CENTRAL] Found connected Peripherals with transfer service: %@", connectedPeripherals)
+        print("[CENTRAL] Found connected Peripherals : %@", connectedPeripherals)
+        
+        // we first consider peripherals that are connected
+        // then we start the process which ends with disconnecting this particular peripheral
+        // and coming back here for taking the next connected peripheral until all habe been
+        // completed. Then we scan for new peripherals.
         
         if let connectedPeripheral = connectedPeripherals.last {
             print("[CENTRAL] Connecting to peripheral %@", connectedPeripheral)
-            // self.discoveredPeripheral = connectedPeripheral
-            self.discoveredPeripherals.append(connectedPeripheral)
+            self.currentlyDiscoveredPeripheral = connectedPeripheral
+            // self.discoveredPeripherals.append(connectedPeripheral)
             centralManager.connect(connectedPeripheral, options: nil)
+        } else if currentlyDiscoveredPeripheral != nil {
+            centralManager.connect(currentlyDiscoveredPeripheral!, options: nil)
         } else {
-            // We were not connected to our counterpart, so start scanning
-            centralManager.scanForPeripherals(withServices: [TransferService.serviceUUID],
+            print("[CENTRAL] call scanForPeripherals : %s", String(describing: cbuuids))
+            // All connected peripherals have been completed. Now start scanning.
+            centralManager.scanForPeripherals(withServices: cbuuids,
                                               options: [
                                                 CBCentralManagerScanOptionAllowDuplicatesKey: true,
-                                                CBCentralManagerScanOptionSolicitedServiceUUIDsKey: [TransferService.serviceUUID]])
+                                                ])
         }
     }
     
@@ -96,6 +103,8 @@ class Central : NSObject {
      *  This cancels any subscriptions if there are any, or straight disconnects if not.
      *  (didUpdateNotificationStateForCharacteristic will cancel the connection if a subscription is involved)
      */
+    
+    /*
     private func cleanup() {
         print("[CENTRAL] cleanup called")
         // Don't do anything if we're not connected
@@ -116,7 +125,24 @@ class Central : NSObject {
             centralManager.cancelPeripheralConnection(discoveredPeripheral)
         }
     }
-    
+    */
+    private func cleanup() {
+        // Don't do anything if we're not connected
+        guard let currentlyDiscoveredPeripheral = currentlyDiscoveredPeripheral,
+            case .connected = currentlyDiscoveredPeripheral.state else { return }
+        
+        for service in (currentlyDiscoveredPeripheral.services ?? [] as [CBService]) {
+            for characteristic in (service.characteristics ?? [] as [CBCharacteristic]) {
+                if characteristic.uuid == TransferService.characteristicUUID && characteristic.isNotifying {
+                    // It is notifying, so unsubscribe
+                    self.currentlyDiscoveredPeripheral?.setNotifyValue(false, for: characteristic)
+                }
+            }
+        }
+        
+        // If we've gotten this far, we're connected, but we're not subscribed, so we just disconnect
+        centralManager.cancelPeripheralConnection(currentlyDiscoveredPeripheral)
+    }
     /*
      *  Write some test data to peripheral
      */
@@ -169,12 +195,14 @@ extension Central : CBCentralManagerDelegate {
         
         if (central.state == .poweredOn && shouldStartScanning && cbuuids != nil) {
             print("[CENTRAL] CBManager Central is powered on - START SCANNING $s", String(describing: cbuuids))
-            centralManager.scanForPeripherals(withServices: cbuuids!,
-                                              options: [
-                                                CBCentralManagerScanOptionAllowDuplicatesKey: true,
-                                                CBCentralManagerScanOptionSolicitedServiceUUIDsKey: cbuuids!
-            ])
-            shouldStartScanning = false
+            retrievePeripheral()
+
+//            centralManager.scanForPeripherals(withServices: cbuuids!,
+//                                              options: [
+//                                                CBCentralManagerScanOptionAllowDuplicatesKey: true,
+//                                                CBCentralManagerScanOptionSolicitedServiceUUIDsKey: cbuuids!
+//            ])
+            // shouldStartScanning = false
         } else {
             print("[CENTRAL] CENTRAL STATE IS NOT POWERED ON")
             switch central.state {
@@ -247,7 +275,19 @@ extension Central : CBCentralManagerDelegate {
         // Hier wollen wir erstmal nach ServiceUUIDs filtern
         // print("[CENTRAL] Discovered %s at %d", String(describing: peripheral.name), RSSI.intValue)
         // Device is in range - have we already seen it?
+        print("[CENTRAL] peripheral discovered : %@", peripheral)
+        // Device is in range - have we already seen it?
+        if currentlyDiscoveredPeripheral != peripheral {
+            // Save a local copy of the peripheral, so CoreBluetooth doesn't get rid of it.
+            currentlyDiscoveredPeripheral = peripheral
+            // And finally, connect to the peripheral.
+            print("Connecting to perhiperal %@", peripheral)
+            centralManager.connect(peripheral, options: nil)
+        }
         
+        
+        /*
+              
         // first we check if the peripheral already has been registered
         if !discoveredPeripherals.contains(peripheral) {
             // if not, we check for the serviceUuids we are interrested in
@@ -301,6 +341,7 @@ extension Central : CBCentralManagerDelegate {
                 //            peripherals[peripheral.identifier.uuidString] = jsonObject;
             }
         }
+         */
     }
     
 //    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String : Any]) {
@@ -323,8 +364,8 @@ extension Central : CBCentralManagerDelegate {
         print("[CENTRAL] Peripheral Connected")
         
         // we do not stop scan here since we are interrested in more than one peripheral
-        // centralManager.stopScan()
-        // print("[CENTRAL] Scanning stopped")
+        centralManager.stopScan()
+        print("[CENTRAL] Scanning stopped")
         
         // set iteration info
         connectionIterationsComplete += 1
@@ -346,16 +387,20 @@ extension Central : CBCentralManagerDelegate {
      */
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         print("[CENTRAL] Perhiperal Disconnected")
-        // discoveredPeripheral = nil
-        discoveredPeripherals = discoveredPeripherals.filter {$0 != peripheral}
+        // we keep the discovered  peripheral
+        // currentlyDiscoveredPeripheral = nil
         
-        // We're disconnected, so start scanning again
-        //        if connectionIterationsComplete < defaultIterations {
-        //            retrievePeripheral()
-        //        } else {
+        // discoveredPeripherals = discoveredPeripherals.filter {$0 != peripheral}
+        
+        // We're disconnected. If stopScanning has not been called yet, start scanning again
+        if shouldStartScanning {
+        // if connectionIterationsComplete < defaultIterations {
+            retrievePeripheral()
+        }
+        // else {
         //            print("Connection iterations completed")
-        //        }
-    }    
+        // }
+    }
 }
 
 
@@ -369,7 +414,7 @@ extension Central: CBPeripheralDelegate {
         
         for service in invalidatedServices where service.uuid == TransferService.serviceUUID {
             print("[CENTRAL] Transfer service is invalidated - rediscover services")
-            peripheral.discoverServices([TransferService.serviceUUID])
+            peripheral.discoverServices([TransferService.serviceUUID] + cbuuids!)
         }
     }
     
@@ -471,7 +516,7 @@ extension Central: CBPeripheralDelegate {
         } else {
             // Notification has stopped, so disconnect from the peripheral
             print("[CENTRAL] Notification stopped on ")
-            // cleanup()
+            cleanup()
         }
         
     }
@@ -485,4 +530,7 @@ extension Central: CBPeripheralDelegate {
     }
     
 }
+
+
+
 

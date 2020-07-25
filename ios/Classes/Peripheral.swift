@@ -2,14 +2,17 @@ import UIKit
 import CoreBluetooth
 import os
 
+/* new version */
+
 class Peripheral : NSObject {
     
     var peripheralManager: CBPeripheralManager!
     var shouldStartAdvertise: Bool = false
     private var advertiseParams: Dictionary<String, Any>!
-//    private var dataToBeAdvertised: [String: Array<String>]!
-    private var dataToBeAdvertised: [String: [CBUUID]]!
+    private var dataToBeAdvertised: [String: Array<String>]!
+//    private var dataToBeAdvertised: [String: [CBUUID]]!
     private var peripheralSetUp: Bool = false
+    private var isInBackground: Bool = false
     
     
     var transferCharacteristic: CBMutableCharacteristic?
@@ -26,15 +29,15 @@ class Peripheral : NSObject {
         print("[PERIPHERAL] Start Advertising Called")
         let serviceUuids = params["uuids"] as! Array<String>
         // peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: serviceUuids])
-//        dataToBeAdvertised = [
-//            CBAdvertisementDataServiceUUIDsKey : serviceUuids,
-//        ]
-        let cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
-            return CBUUID(string: uuid);
-        })
         dataToBeAdvertised = [
-            CBAdvertisementDataServiceUUIDsKey : cbuuids,
+            CBAdvertisementDataServiceUUIDsKey : serviceUuids,
         ]
+//        let cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
+//            return CBUUID(string: uuid);
+//        })
+//        dataToBeAdvertised = [
+//            CBAdvertisementDataServiceUUIDsKey : cbuuids,
+//        ]
         
         var services: [Dictionary<String, Any>] = []
         for serviceUuid in serviceUuids {
@@ -49,7 +52,20 @@ class Peripheral : NSObject {
     }
     
     public func stopAdvertising() {
+        print("[PERIPHERAL] STOP ADVERTISING")
         peripheralManager.stopAdvertising()
+        let state = UIApplication.shared.applicationState
+        if state == .background {
+            if !isInBackground {
+                print("[PERIPHERAL] App is now in Background - REMOVE SERVICE")
+                isInBackground = true;
+            }
+        } else {
+            if isInBackground {
+                print("[PERIPHERAL] App is now in Foreground - REMOVE SERVICE")
+                isInBackground = false;
+            }
+        }
     }
     
     // MARK: - Helper Methods
