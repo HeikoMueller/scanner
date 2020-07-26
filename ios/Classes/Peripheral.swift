@@ -196,7 +196,7 @@ extension Peripheral : CBPeripheralManagerDelegate {
      */
     internal func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         if (peripheral.state == .poweredOn && shouldStartAdvertise &&  dataToBeAdvertised != nil) {
-            print("[PERIPHERAL] Start advertising ...")
+            print("[PERIPHERAL] Start advertising ... %@", dataToBeAdvertised)
             if(!peripheralSetUp) {
                 print("[PERIPHERAL] Peripheral SET UP ...")
                 setupPeripheral()
