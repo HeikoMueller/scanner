@@ -2,6 +2,7 @@ package com.formingstudies.scanner
 
 import android.R.bool
 import android.content.Context
+import android.util.Log
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.*
@@ -112,11 +113,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     if (call.arguments !is Map<*, *>) {
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
-    val arguments = call.arguments as Map<String, Any>
-    val scanData = Data(
-      arguments["serviceUUID"] as String
-    )
-    scanner!!.startScanning(scanData)
+    scanner!!.startScanning(call.arguments)
     result.success(null)
   }
 

@@ -74,7 +74,7 @@ class Scanner {
 
 
 //    fun start(uuids: Array<String>) {
-    fun startScanning(data: Data) {
+    fun startScanning(params: Map<*, *>) {
         Log.i(TAG, "ANDROID SCANNER START")
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
             Log.i(TAG, "API LEVEL <21")
@@ -85,7 +85,7 @@ class Scanner {
         } else {
             Log.i(TAG, "API LEVEL 26+")
             // API Level 26
-            val scanFilters = buildScanFilters(data);
+            val scanFilters = buildScanFilters(params);
             val scanSettings = buildScanSettings();
             mBluetoothLeScanner!!.startScan(scanFilters, scanSettings, mScanCallback)
 
@@ -111,20 +111,22 @@ class Scanner {
     }
 
 
-    private fun buildScanFilters(data: Data): ArrayList<ScanFilter>? {
+    private fun buildScanFilters(params: Map<*, *>): ArrayList<ScanFilter>? {
         var scanFilters = ArrayList<ScanFilter>()
+        /*
         if(data.advertiseServiceUUID != null) {
             val dataBuilder = ScanFilter.Builder()
             dataBuilder.setServiceUuid(ParcelUuid.fromString(data.advertiseServiceUUID));
             scanFilters.add(dataBuilder.build())        
         }
-        /*    
-        for (uuid in data.uuids.orEmpty()) {
+        */
+        val uuids = params["uuids"] as ArrayList<String>
+        for (uuid in uuids) {
             val dataBuilder = ScanFilter.Builder()
             dataBuilder.setServiceUuid(ParcelUuid.fromString(uuid));
             scanFilters.add(dataBuilder.build())
         }
-        */
+
         return scanFilters
     }
 }
