@@ -14,7 +14,6 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.bluetooth.le.ScanResult
-// import android.bluetooth.le.*
 import android.content.Context
 import android.os.Build
 import android.os.ParcelUuid
@@ -131,23 +130,14 @@ class Scanner {
         return builder.build();
     }
 
-
     private fun buildScanFilters(params: Map<*, *>): ArrayList<ScanFilter>? {
         var scanFilters = ArrayList<ScanFilter>()
-        /*
-        if(data.advertiseServiceUUID != null) {
-            val dataBuilder = ScanFilter.Builder()
-            dataBuilder.setServiceUuid(ParcelUuid.fromString(data.advertiseServiceUUID));
-            scanFilters.add(dataBuilder.build())        
-        }
-        */
         val uuids = params["uuids"] as ArrayList<String>
         for (uuid in uuids) {
             val dataBuilder = ScanFilter.Builder()
             dataBuilder.setServiceUuid(ParcelUuid.fromString(uuid));
             scanFilters.add(dataBuilder.build())
         }
-
         return scanFilters
     }
 }
