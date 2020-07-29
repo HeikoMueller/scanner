@@ -107,7 +107,8 @@ class Scanner {
     private val mScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result);
-            if(!discoveredDevices?.containsKey(result?.device.toString())!!) {
+            var key = result?.device.toString()
+            if(!discoveredDevices!!.containsKey(key)) {
                 discoveredDevices?.set(result.device.toString(), result)
                 mLog.i(TAG, result?.toString());
                 context?.let { connect(it, result.device) }
