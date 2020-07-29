@@ -68,7 +68,7 @@ class Scanner {
         val result = characteristic?.let { gatt.readCharacteristic(it) }
         if (result != null) {
             if (result.status == BluetoothGatt.GATT_SUCCESS) {
-                mLog.i(TAG, "result.value = ${result.value}")
+                mLog.i(TAG, "result.value = ${String(result.value, Charsets.UTF_8)}")
             } else {
                 // read characteristic failed
                 mLog.i(TAG, "ELSE CASE")
