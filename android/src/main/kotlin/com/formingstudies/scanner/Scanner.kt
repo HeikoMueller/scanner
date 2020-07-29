@@ -34,6 +34,7 @@ class Scanner {
 
     private var discoveredDevices: MutableMap<String, Any>? = null
 
+
     val serviceUuid = "0000FF01-0000-1000-8000-00805F9B34FB".toUuid()
     val characteristicUuid_A = "08590F7E-DB05-467E-8757-72F6FAEB13D4".toUuid()
     val characteristicUuid_B = "E20A39F4-73F5-4BC4-A12F-17D1AD07A961".toUuid()
@@ -106,7 +107,7 @@ class Scanner {
     private val mScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result);
-            if(!discoveredDevices.containsKey(result?.device?.toString())) {
+            if(!discoveredDevices?.containsKey(result?.device.toString())!!) {
                 discoveredDevices?.set(result.device.toString(), result)
                 mLog.i(TAG, result?.toString());
                 context?.let { connect(it, result.device) }
