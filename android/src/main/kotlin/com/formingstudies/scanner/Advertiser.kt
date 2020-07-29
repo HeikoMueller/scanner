@@ -32,6 +32,8 @@ class Advertiser {
     val characteristicUuid_A = "08590F7E-DB05-467E-8757-72F6FAEB13D4".toUuid()
     val characteristicUuid_B = "E20A39F4-73F5-4BC4-A12F-17D1AD07A961".toUuid()
 
+    private var advertiseServiceUuid: String? = null
+
     fun init(context: Context) {
         mLog.i(TAG, "ADVERTISER INIT")
         this.context = context
@@ -42,7 +44,6 @@ class Advertiser {
 
     fun expose(
             context: Context,
-            advertiseServiceUuid: String,
             uuids: ArrayList<String>,
             transmissionPowerIncluded: Boolean
     ) = GlobalScope.launch {
@@ -64,13 +65,6 @@ class Advertiser {
                     gatt.addService(service)
                 }
             }
-
-            // finally advertise the service
-            val settings = buildAdvertiseSettings()
-            val advertiseData = buildAdvertiseData(
-                    advertiseServiceUuid,
-                    transmissionPowerIncluded)
-            mBluetoothLeAdvertiser!!.startAdvertising(settings, advertiseData, mAdvertiseCallback)
         } catch(err: Exception) {
             mLog.e(TAG, err.toString())
         }
@@ -79,10 +73,9 @@ class Advertiser {
     fun startAdvertising(params: Map<*, *>) {
         mLog.i(TAG, "START ADVERTISING")
         val uuids = params["uuids"] as ArrayList<String>
-        val advertiseServiceUuid = uuids!!.first()
+        advertiseServiceUuid = uuids!!.first()
         val transmissionPowerIncluded: Boolean = true;
         context?.let { expose(it,
-                advertiseServiceUuid,
                 uuids,
                 transmissionPowerIncluded
         ) }
@@ -101,6 +94,18 @@ class Advertiser {
             mLog.i(TAG, device?.toString())
             mLog.i(TAG, status.toString())
             mLog.i(TAG, newState.toString())
+        }
+        // fires when the service in expose() has been added
+        override fun onServiceAdded(status: Int, service: BluetoothGattService) {
+            mLog.i(TAG, "ON-SERVICE-ADDED ... now start advertising")
+            // finally advertise the service
+            val settings = buildAdvertiseSettings()
+            advertiseServiceUuid?.let {
+                val advertiseData = buildAdvertiseData(
+                        advertiseServiceUuid,
+                    true)
+                mBluetoothLeAdvertiser!!.startAdvertising(settings, advertiseData, mAdvertiseCallback)
+            }
         }
     }
 
