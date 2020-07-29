@@ -97,7 +97,6 @@ class Scanner {
             val scanFilters = buildScanFilters(params);
             val scanSettings = buildScanSettings();
             mBluetoothLeScanner!!.startScan(scanFilters, scanSettings, mScanCallback)
-
         }
     }
     fun stopScanning() {

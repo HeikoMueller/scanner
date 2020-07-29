@@ -81,13 +81,8 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
     val arguments = call.arguments as Map<String, Any>
-    val advertiseData = Data(
-      arguments["serviceUUID"] as String,
-      arguments["characteristicUUID"] as String?,
-      arguments["characteristicValue"] as String?
-    )
     try {
-      advertiser!!.startAdvertising(advertiseData)
+      advertiser!!.startAdvertising(arguments)
     } catch(err: Exception) {
       mLog.e(TAG, "Error in startAdvertise" + err.toString())
     }
