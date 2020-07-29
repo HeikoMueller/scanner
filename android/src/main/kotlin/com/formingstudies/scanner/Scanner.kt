@@ -89,9 +89,12 @@ class Scanner {
         } else if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
             mLog.i(TAG, "API LEVEL <26")
             // API Level 21
+            val scanFilters = buildScanFilters(params);
+            val scanSettings = buildScanSettings();
+            mBluetoothLeScanner!!.startScan(scanFilters, scanSettings, mScanCallback)
         } else {
             mLog.i(TAG, "API LEVEL 26+")
-            // API Level 26
+            // API Level 26 -> TODO startScan with pending intend
             val scanFilters = buildScanFilters(params);
             val scanSettings = buildScanSettings();
             mBluetoothLeScanner!!.startScan(scanFilters, scanSettings, mScanCallback)
@@ -100,7 +103,7 @@ class Scanner {
     }
     fun stopScanning() {
         mLog.i(TAG, "ANDROID SCANNER STOP")
-        mBluetoothLeScanner!!.stopScan(scanCallback)
+        mBluetoothLeScanner!!.stopScan(mScanCallback)
         discoveredDevices.clear()
         // scanCallback = null
     }
