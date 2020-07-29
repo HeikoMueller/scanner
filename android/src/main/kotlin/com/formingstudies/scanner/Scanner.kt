@@ -100,8 +100,9 @@ class Scanner {
     }
     fun stopScanning() {
         mLog.i(TAG, "ANDROID SCANNER STOP")
-        scanCallback = null
-
+        mBluetoothLeScanner!!.stopScan(scanCallback)
+        discoveredDevices.clear()
+        // scanCallback = null
     }
 
     private val mScanCallback = object : ScanCallback() {
