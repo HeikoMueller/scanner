@@ -113,7 +113,8 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     if (call.arguments !is Map<*, *>) {
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
-    scanner!!.startScanning(call.arguments)
+    val arguments = call.arguments as Map<String, Any>
+    scanner!!.startScanning(arguments)
     result.success(null)
   }
 
