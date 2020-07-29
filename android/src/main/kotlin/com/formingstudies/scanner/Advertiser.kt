@@ -296,17 +296,19 @@ class Advertiser {
     fun init(context: Context) {
         mLog.i(TAG, "ADVERTISER INIT")
         this.context = context
+        /*
         if (mBluetoothLeAdvertiser == null) {
             mBluetoothLeAdvertiser = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeAdvertiser
         }
         if (mBluetoothGattServer == null) {
             mBluetoothGattServer = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).openGattServer(context, mGattServerCallback)
-        }   
+        }
+         */
     }
     
     fun startAdvertising(data: Data) {
         // mLog.i(TAG, "START ADVERTISING " + data.uuid)
-
+        return
         val settings = buildAdvertiseSettings()
         val advertiseData = buildAdvertiseData(data)
 
