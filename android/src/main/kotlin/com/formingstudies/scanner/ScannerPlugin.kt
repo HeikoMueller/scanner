@@ -2,7 +2,7 @@ package com.formingstudies.scanner
 
 import android.R.bool
 import android.content.Context
-import android.util.Log
+import android.util.Log as mLog
 import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.*
@@ -59,16 +59,16 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     if (call.method == "getPlatformVersion") {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else if (call.method == "startScanning") {
-      Log.i(TAG, "ANDROID startScanning called")
+      mLog.i(TAG, "ANDROID startScanning called")
       startScanning(call, result)
     } else if (call.method == "stopScanning") {
-      Log.i(TAG, "ANDROID stopScanning called")
+      mLog.i(TAG, "ANDROID stopScanning called")
       stopScanning(result)
     } else if (call.method == "startAdvertising") {
-      Log.i(TAG, "ANDROID startAdvertising called")
+      mLog.i(TAG, "ANDROID startAdvertising called")
       startAdvertising(call, result)
     } else if (call.method == "stopAdvertising") {
-      Log.i(TAG, "ANDROID stopAdvertising called")
+      mLog.i(TAG, "ANDROID stopAdvertising called")
       stopAdvertising(result)
     } else {
       result.notImplemented()
@@ -76,7 +76,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   }
 
   private fun startAdvertising(call: MethodCall, result: MethodChannel.Result) {
-    Log.i(TAG, "startAdvertise in ScannerPlugin called")
+    mLog.i(TAG, "startAdvertise in ScannerPlugin called")
     if (call.arguments !is Map<*, *>) {
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
@@ -89,17 +89,17 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
     try {
       advertiser!!.startAdvertising(advertiseData)
     } catch(err: Exception) {
-      Log.e(TAG, "Error in startAdvertise" + err.toString())
+      mLog.e(TAG, "Error in startAdvertise" + err.toString())
     }
     result.success(null)
   }
 
   private fun stopAdvertising(result: MethodChannel.Result) {
-    Log.i(TAG, "stopAdvertise in ScannerPlugin called")
+    mLog.i(TAG, "stopAdvertise in ScannerPlugin called")
     try {
       advertiser!!.stopAdvertising()
     } catch(err: Exception) {
-      Log.e(TAG, err.toString())
+      mLog.e(TAG, err.toString())
     }
 
     result.success(null)
@@ -109,7 +109,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
 
 
   private fun startScanning(call: MethodCall, result: MethodChannel.Result) {
-    Log.i(TAG, "startScanning in ScannerPlugin called")
+    mLog.i(TAG, "startScanning in ScannerPlugin called")
     if (call.arguments !is Map<*, *>) {
       throw IllegalArgumentException("Arguments are not a map " + call.arguments)
     }
@@ -118,7 +118,7 @@ class ScannerPlugin: FlutterPlugin, MethodChannel.MethodCallHandler, EventChanne
   }
 
   private fun stopScanning(result: MethodChannel.Result) {
-    Log.i(TAG, "stopScanning in ScannerPlugin called")
+    mLog.i(TAG, "stopScanning in ScannerPlugin called")
     scanner!!.stopScanning()
     result.success(null)
   }
