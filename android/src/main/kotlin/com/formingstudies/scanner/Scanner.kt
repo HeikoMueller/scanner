@@ -115,7 +115,7 @@ class Scanner {
                     mLog.i(TAG, result?.toString());
                     context?.let { connect(it, result.device) }
                 }
-            } catch(err) {
+            } catch(err: Exception) {
                 mLog.e(TAG, err.toString())
             }
         }

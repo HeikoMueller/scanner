@@ -17,6 +17,7 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.Handler
 import android.os.ParcelUuid
+import android.util.Log
 import io.flutter.Log
 import java.util.*
 import java.util.LinkedList
