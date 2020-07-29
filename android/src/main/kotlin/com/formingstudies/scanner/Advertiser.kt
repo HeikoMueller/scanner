@@ -17,7 +17,7 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.Handler
 import android.os.ParcelUuid
-import android.util.Log
+import android.util.Log as mLog
 import io.flutter.Log
 import java.util.*
 import java.util.LinkedList
@@ -97,7 +97,7 @@ class Advertiser {
                 try {
                     bluetoothCommand.run()
                 } catch (err: Exception) {
-                    Log.e(TAG, "bleHandler CATCH ERROR " + err.toString())
+                    mLog..e(TAG, "bleHandler CATCH ERROR " + err.toString())
                 }
             })
         }
@@ -106,23 +106,23 @@ class Advertiser {
 
     // the readCharacteristic command
     open fun readCharacteristic(characteristic: BluetoothGattCharacteristic?): Boolean {
-        Log.i(TAG, "READ CHARACTERISTICS START")
+        mLog..i(TAG, "READ CHARACTERISTICS START")
 
         if (bluetoothGatt == null) {
-            Log.e(TAG, "ERROR: Gatt is 'null', ignoring read request")
+            mLog..e(TAG, "ERROR: Gatt is 'null', ignoring read request")
             return false
         }
 
         // Check if characteristic is valid
         if (characteristic == null) {
-            Log.e(TAG, "ERROR: Characteristic is 'null', ignoring read request")
+            mLog..e(TAG, "ERROR: Characteristic is 'null', ignoring read request")
             return false
         }
 
         // Check if this characteristic actually has READ property
         if (characteristic.properties and PROPERTY_READ === 0) {
-            Log.e(TAG, "ERROR: Characteristic cannot be read")
-            Log.i(TAG, characteristic.properties.toString())
+            mLog..e(TAG, "ERROR: Characteristic cannot be read")
+            mLog..i(TAG, characteristic.properties.toString())
             return false
         }
 
@@ -131,27 +131,27 @@ class Advertiser {
 
         val result = commandQueue!!.add(Runnable {
             if (!bluetoothGatt!!.readCharacteristic(characteristic)) {
-                Log.e(TAG, java.lang.String.format("ERROR: readCharacteristic failed for characteristic: %s", characteristic.uuid))
+                mLog..e(TAG, java.lang.String.format("ERROR: readCharacteristic failed for characteristic: %s", characteristic.uuid))
                 completedCommand()
             } else {
-                Log.i(TAG, "READ CHARACTERISTICS HIER : " + characteristic.uuid.toString())
+                mLog..i(TAG, "READ CHARACTERISTICS HIER : " + characteristic.uuid.toString())
                 val value = characteristic.value
-                Log.i(TAG, "READ CHARACTERISTICS HVAL : " + value?.toString(Charsets.UTF_8))
+                mLog..i(TAG, "READ CHARACTERISTICS HVAL : " + value?.toString(Charsets.UTF_8))
 
-                Log.d(TAG, java.lang.String.format("reading characteristic <%s>", characteristic.uuid))
-                Log.d(TAG, java.lang.String.format("reading characteristic <%s>", characteristic.value?.toString(Charsets.UTF_8)))
-                Log.d(TAG, java.lang.String.format("reading characteristic end"))
+                mLog..d(TAG, java.lang.String.format("reading characteristic <%s>", characteristic.uuid))
+                mLog..d(TAG, java.lang.String.format("reading characteristic <%s>", characteristic.value?.toString(Charsets.UTF_8)))
+                mLog..d(TAG, java.lang.String.format("reading characteristic end"))
                 nrTries++
             }
         })
         if (result) {
             nextCommand()
         } else {
-            Log.e(TAG, "ERROR: Could not enqueue read characteristic command")
+            mLog..e(TAG, "ERROR: Could not enqueue read characteristic command")
         }
         return result
         } catch(err: Exception) {
-            Log.e(TAG, err.toString())
+            mLog..e(TAG, err.toString())
         }
         return false
     }
@@ -159,47 +159,47 @@ class Advertiser {
     private val mBluetoothGattCallback = object : BluetoothGattCallback() {
         override fun onServicesDiscovered (gatt: BluetoothGatt , status: Int) {
             for(service in gatt.services.orEmpty()) {
-                // Log.i(TAG, "EXTERNAL SERVICE onServicesDiscovered " + service.uuid.toString())
+                // mLog..i(TAG, "EXTERNAL SERVICE onServicesDiscovered " + service.uuid.toString())
                 if(serviceUUIDs.contains(service.uuid.toString())) {
-                    Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED " + service.uuid.toString())
+                    mLog..i(TAG, "ON-SERVICE-MATCH--DISCOVERED " + service.uuid.toString())
                     // now get characteristics
                     var characteristics = service.characteristics
-                    Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED CHARACTERISTICS LENGTH " + characteristics.size.toString())
+                    mLog..i(TAG, "ON-SERVICE-MATCH--DISCOVERED CHARACTERISTICS LENGTH " + characteristics.size.toString())
                     for (characteristic in characteristics) {
-                        Log.i(TAG, "ON-SERVICE-MATCH--DISCOVERED CHARACTERISTICS UUID " + characteristic.uuid.toString())
+                        mLog..i(TAG, "ON-SERVICE-MATCH--DISCOVERED CHARACTERISTICS UUID " + characteristic.uuid.toString())
                         readCharacteristic(characteristic)
                     }
                 }
             }
-            Log.i(TAG, "Service discovered END HANK ===============================================")
+            mLog..i(TAG, "Service discovered END HANK ===============================================")
         }
 
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            Log.i(TAG, "EXTERNAL SERVICE connection did change")
+            mLog..i(TAG, "EXTERNAL SERVICE connection did change")
             bluetoothGatt = gatt
             gatt.discoverServices()
         }
 
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-            Log.i(TAG, "EXTERNAL SERVICE characteristic changed")
+            mLog..i(TAG, "EXTERNAL SERVICE characteristic changed")
         }
 
         override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
-            Log.i(TAG, "EXTERNAL SERVICE characteristic READ")
-            Log.i(TAG, "EXTERNAL SERVICE characteristic READ " + characteristic.uuid.toString());
-            Log.i(TAG, "EXTERNAL SERVICE characteristic READ " + characteristic.descriptors.toString());
-            Log.i(TAG, "EXTERNAL SERVICE characteristic READ " + characteristic.permissions.toString());
-            Log.i(TAG, "EXTERNAL SERVICE characteristic READ" + characteristic.value.toString(Charsets.UTF_8))
-            Log.i(TAG, "EXTERNAL SERVICE characteristic READ END ================================")
+            mLog..i(TAG, "EXTERNAL SERVICE characteristic READ")
+            mLog..i(TAG, "EXTERNAL SERVICE characteristic READ " + characteristic.uuid.toString());
+            mLog..i(TAG, "EXTERNAL SERVICE characteristic READ " + characteristic.descriptors.toString());
+            mLog..i(TAG, "EXTERNAL SERVICE characteristic READ " + characteristic.permissions.toString());
+            mLog..i(TAG, "EXTERNAL SERVICE characteristic READ" + characteristic.value.toString(Charsets.UTF_8))
+            mLog..i(TAG, "EXTERNAL SERVICE characteristic READ END ================================")
             gatt.disconnect ()
            // readCharacteristic(characteristic)
         }
 
         /*
         override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
-            Log.i(TAG, "EXTERNAL SEVICE characteristic READ")
+            mLog..i(TAG, "EXTERNAL SEVICE characteristic READ")
             if (status != GATT_SUCCESS) {
-                Log.e(TAG, String.format(Locale.ENGLISH,"ERROR: Read failed for characteristic: %s, status %d", characteristic.getUuid(), status));
+                mLog..e(TAG, String.format(Locale.ENGLISH,"ERROR: Read failed for characteristic: %s, status %d", characteristic.getUuid(), status));
                 completedCommand();
                 return;
             }
@@ -210,7 +210,7 @@ class Advertiser {
             completedCommand();
             val value = characteristic.value;
             if(value != null) {
-                Log.i(TAG, "EXTERNAL SERVICE VALUE $value")
+                mLog..i(TAG, "EXTERNAL SERVICE VALUE $value")
             }
 
          */
@@ -221,24 +221,24 @@ class Advertiser {
     /* Callbacks on own GATT server */
     private val mGattServerCallback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
-            Log.i(TAG, "GATT-SERVER CALLBACK called Connection Did Change")
-            Log.i(TAG, device?.toString())
-            Log.i(TAG, status.toString())
-            Log.i(TAG, newState.toString())
+            mLog..i(TAG, "GATT-SERVER CALLBACK called Connection Did Change")
+            mLog..i(TAG, device?.toString())
+            mLog..i(TAG, status.toString())
+            mLog..i(TAG, newState.toString())
             try {
                 // try to connect
                 device?.connectGatt(context,true, mBluetoothGattCallback)
             } catch(err: Exception) {
-                Log.e(TAG, err.toString())
+                mLog..e(TAG, err.toString())
             }
         }
         /* THIS REFLECTS ONLY LOCAL SERVICES */
         /*
         override fun onServiceAdded(status: Int, service: BluetoothGattService) {
-            Log.i(TAG, "ON-SERVICE-ADDED")
-            Log.i(TAG, service.uuid.toString())
+            mLog..i(TAG, "ON-SERVICE-ADDED")
+            mLog..i(TAG, service.uuid.toString())
             if(serviceUUIDs.contains(service.uuid.toString())) {
-                Log.i(TAG, "ON-SERVICE-MATCH--ADDED" + service.uuid.toString())
+                mLog..i(TAG, "ON-SERVICE-MATCH--ADDED" + service.uuid.toString())
             }
 
         }
@@ -250,14 +250,14 @@ class Advertiser {
     private val mAdvertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
             super.onStartSuccess(settingsInEffect)
-            Log.i(TAG, "LE Advertise Started.")
+            mLog..i(TAG, "LE Advertise Started.")
             //advertisingCallback(true)
             isAdvertising = true
         }
         
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
-            Log.e(TAG, "ERROR while starting advertising: $errorCode")
+            mLog..e(TAG, "ERROR while starting advertising: $errorCode")
             val statusText: String
 
             when (errorCode) {
@@ -287,14 +287,14 @@ class Advertiser {
                 }
             }
 
-            Log.e(TAG, "ERROR while starting advertising: $errorCode - $statusText")
+            mLog..e(TAG, "ERROR while starting advertising: $errorCode - $statusText")
             //advertisingCallback(false)
             isAdvertising = false
         }
     }
     
     fun init(context: Context) {
-        Log.i(TAG, "ADVERTISER INIT")
+        mLog..i(TAG, "ADVERTISER INIT")
         this.context = context
         if (mBluetoothLeAdvertiser == null) {
             mBluetoothLeAdvertiser = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeAdvertiser
@@ -305,7 +305,7 @@ class Advertiser {
     }
     
     fun startAdvertising(data: Data) {
-        // Log.i(TAG, "START ADVERTISING " + data.uuid)
+        // mLog..i(TAG, "START ADVERTISING " + data.uuid)
 
         val settings = buildAdvertiseSettings()
         val advertiseData = buildAdvertiseData(data)
