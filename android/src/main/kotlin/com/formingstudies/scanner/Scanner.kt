@@ -19,6 +19,7 @@ import com.juul.able.experimental.android.connectGatt
 import com.juul.able.experimental.toUuid
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import io.flutter.Log
 
 
 class Scanner {
