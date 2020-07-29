@@ -9,18 +9,21 @@ package com.formingstudies.scanner
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.*
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanSettings
+import android.bluetooth.le.ScanResult
+// import android.bluetooth.le.*
 import android.content.Context
 import android.os.Build
 import android.os.ParcelUuid
-import android.util.Log
+import android.util.Log as mLog
 import com.juul.able.experimental.ConnectGattResult
 import com.juul.able.experimental.android.connectGatt
 import com.juul.able.experimental.toUuid
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import io.flutter.Log
-
 
 class Scanner {
 
@@ -37,7 +40,7 @@ class Scanner {
     // private val apiLevel: Int = android.os.Build.VERSION.SDK_INT
 
     fun init(context: Context) {
-        Log.i(TAG, "SCANNER INIT")
+        mLog.i(TAG, "SCANNER INIT")
         this.context = context
         if (mBluetoothLeScanner == null) {
             mBluetoothLeScanner = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
@@ -62,10 +65,10 @@ class Scanner {
         val result = characteristic?.let { gatt.readCharacteristic(it) }
         if (result != null) {
             if (result.status == BluetoothGatt.GATT_SUCCESS) {
-                Log.i(TAG, "result.value = ${result.value}")
+                mLog.i(TAG, "result.value = ${result.value}")
             } else {
                 // read characteristic failed
-                Log.i(TAG, "ELSE CASE")
+                mLog.i(TAG, "ELSE CASE")
             }
         }
 
@@ -76,15 +79,15 @@ class Scanner {
 
 //    fun start(uuids: Array<String>) {
     fun startScanning(params: Map<*, *>) {
-        Log.i(TAG, "ANDROID SCANNER START")
+        mLog.i(TAG, "ANDROID SCANNER START")
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
-            Log.i(TAG, "API LEVEL <21")
+            mLog.i(TAG, "API LEVEL <21")
             // API Level unter 21
         } else if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
-            Log.i(TAG, "API LEVEL <26")
+            mLog.i(TAG, "API LEVEL <26")
             // API Level 21
         } else {
-            Log.i(TAG, "API LEVEL 26+")
+            mLog.i(TAG, "API LEVEL 26+")
             // API Level 26
             val scanFilters = buildScanFilters(params);
             val scanSettings = buildScanSettings();
@@ -93,7 +96,7 @@ class Scanner {
         }
     }
     fun stopScanning() {
-        Log.i(TAG, "ANDROID SCANNER STOP")
+        mLog.i(TAG, "ANDROID SCANNER STOP")
         scanCallback = null
 
     }
@@ -101,7 +104,7 @@ class Scanner {
     private val mScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result);
-            Log.i(TAG, result?.toString());
+            mLog.i(TAG, result?.toString());
         }
     }
 
