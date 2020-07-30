@@ -51,7 +51,7 @@ class Advertiser {
     ) = GlobalScope.launch {
         // first create gatt server
         try {
-            val gatt = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).openGattServer(context, mGattServerCallback)
+            gatt = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).openGattServer(context, mGattServerCallback)
 
             // then add services with readable characteristics
             val uuidsIterator = uuids.iterator()
@@ -65,7 +65,7 @@ class Advertiser {
                     val characteristicConfig = BluetoothGattDescriptor(characteristicUuid_A, BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattCharacteristic.PERMISSION_WRITE)
                     characteristic.addDescriptor(characteristicConfig)
                     service.addCharacteristic(characteristic)
-                    gatt.addService(service)
+                    gatt?.addService(service)
                 }
             }
         } catch(err: Exception) {
@@ -111,14 +111,24 @@ class Advertiser {
             }
         }
 
-        override fun onCharacteristicReadRequest(device: BluetoothDevice?,
-                                                 requestId: Int, offset: Int, characteristic: BluetoothGattCharacteristic) {
-            mLog.i(TAG, "READREQUEST RECEIVED")
-            if (characteristicUuid_B == characteristic.uuid) {
+
+        override fun onCharacteristicReadRequest(device: BluetoothDevice?, requestId: Int, offset: Int, characteristic: BluetoothGattCharacteristic?) {
+            mLog.i(TAG, "READREQUEST RECEIVED a")
+            mLog.i(TAG, "requestId $requestId.toString()")
+            mLog.i(TAG, "offset $offset.toString()")
+            mLog.i(TAG, "characteristic $characteristic.toString()")
+
+
+            if (characteristicUuid_B == characteristic?.uuid) {
                 try {
+                    if(gatt == null) {
+                        mLog.e(TAG, "GATT SERVER IS NULL")
+                    } else {
+                        mLog.i(TAG, "GATT SERVER IS NOT NULL")
+                    }
                     val string = "HelloHank from Android"
                     val value: ByteArray =  string.toByteArray(Charsets.UTF_8)
-                    gatt!!.sendResponse(device, requestId, GATT_SUCCESS, 0, value)
+                    gatt?.sendResponse(device, requestId, GATT_SUCCESS, 0, value)
                 } catch(err: Exception) {
                     mLog.e(TAG, err.toString())
                 }
