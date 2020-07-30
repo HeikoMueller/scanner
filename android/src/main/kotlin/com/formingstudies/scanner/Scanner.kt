@@ -115,7 +115,7 @@ class Scanner {
                     discoveredDevices.add(result.device.toString())
                     mLog.i(TAG, result?.toString());
                     context?.let {
-                        launch(context) {
+                        launch(it) {
                             connect(it, result.device)
                         }
                     }
