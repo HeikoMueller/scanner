@@ -8,17 +8,19 @@
 package com.formingstudies.scanner
 
 import android.bluetooth.*
+import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
-import android.util.Log as mLog
-import java.util.*
 import com.juul.able.experimental.toUuid
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.util.*
+import android.util.Log as mLog
+
 
 class Advertiser {
 
@@ -58,9 +60,10 @@ class Advertiser {
                 service?.let {
                     val characteristic = BluetoothGattCharacteristic(
                             characteristicUuid_B,
-                            BluetoothGattCharacteristic.PROPERTY_READ,
+                            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                             BluetoothGattCharacteristic.PERMISSION_READ)
-                    characteristic.value = "HelloHank from Android".toByteArray(Charsets.UTF_8)
+                    val characteristicConfig = BluetoothGattDescriptor(characteristicUuid_A, BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattCharacteristic.PERMISSION_WRITE)
+                    characteristic.addDescriptor(characteristicConfig)
                     service.addCharacteristic(characteristic)
                     gatt.addService(service)
                 }
@@ -102,11 +105,27 @@ class Advertiser {
             val settings = buildAdvertiseSettings()
             advertiseServiceUuid?.let {
                 val advertiseData = buildAdvertiseData(
-                        advertiseServiceUuid,
-                    true)
+                        advertiseServiceUuid!!,
+                        true)
                 mBluetoothLeAdvertiser!!.startAdvertising(settings, advertiseData, mAdvertiseCallback)
             }
         }
+
+        override fun onCharacteristicReadRequest(device: BluetoothDevice?,
+                                                 requestId: Int, offset: Int, characteristic: BluetoothGattCharacteristic) {
+            mLog.i(TAG, "READREQUEST RECEIVED")
+            if (characteristicUuid_B == characteristic.uuid) {
+                try {
+                    val string = "HelloHank from Android"
+                    val value: ByteArray =  string.toByteArray(Charsets.UTF_8)
+                    gatt!!.sendResponse(device, requestId, GATT_SUCCESS, 0, value)
+                } catch(err: Exception) {
+                    mLog.e(TAG, err.toString())
+                }
+            }
+        }
+
+
     }
 
 
