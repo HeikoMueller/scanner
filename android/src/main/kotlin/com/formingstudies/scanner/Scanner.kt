@@ -74,6 +74,14 @@ class Scanner {
             }
         }
 
+        val characteristics = gatt.getService(serviceUuid)?.getCharacteristics()
+        if (characteristics != null) {
+            for (char in characteristics) {
+                mLog.i(TAG, char.uuid.toString())
+            }
+        }
+
+        /*
         val txPower = gatt.getService(serviceUuid)?.getCharacteristic(0x1804)
         val txPowerResult = txPower?.let { gatt.readCharacteristic(it) }
         if (txPowerResult != null) {
@@ -84,7 +92,7 @@ class Scanner {
                 mLog.i(TAG, "txPower ELSE CASE")
             }
         }
-
+         */
 
 
 
