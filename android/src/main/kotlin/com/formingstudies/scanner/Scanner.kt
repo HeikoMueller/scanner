@@ -114,7 +114,11 @@ class Scanner {
                 if(!discoveredDevices.contains(key)) {
                     discoveredDevices.add(result.device.toString())
                     mLog.i(TAG, result?.toString());
-                    context?.let { connect(it, result.device) }
+                    context?.let {
+                        launch(context) {
+                            connect(it, result.device)
+                        }
+                    }
                 } else {
                     val message = "KNOWN DEVICE : " + result?.toString()
                     mLog.i(TAG, message);
