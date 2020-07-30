@@ -74,6 +74,21 @@ class Scanner {
             }
         }
 
+        val txPower = gatt.getService(serviceUuid)?.getCharacteristic(0x1804)
+        val txPowerResult = txPower?.let { gatt.readCharacteristic(it) }
+        if (txPowerResult != null) {
+            if (txPowerResult.status == BluetoothGatt.GATT_SUCCESS) {
+                mLog.i(TAG, "txPowerResult.value = ${String(result.value, Charsets.UTF_8)}")
+            } else {
+                // read characteristic failed
+                mLog.i(TAG, "txPower ELSE CASE")
+            }
+        }
+
+
+
+
+
         gatt.disconnect()
         gatt.close()
     }
