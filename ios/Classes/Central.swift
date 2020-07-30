@@ -133,7 +133,7 @@ class Central : NSObject {
         
         for service in (currentlyDiscoveredPeripheral.services ?? [] as [CBService]) {
             for characteristic in (service.characteristics ?? [] as [CBCharacteristic]) {
-                if characteristic.uuid == TransferService.characteristicUUID && characteristic.isNotifying {
+                if characteristic.uuid == TransferService.characteristicUUID_A && characteristic.isNotifying {
                     // It is notifying, so unsubscribe
                     self.currentlyDiscoveredPeripheral?.setNotifyValue(false, for: characteristic)
                 }
@@ -437,7 +437,7 @@ extension Central: CBPeripheralDelegate {
         for service in peripheralServices {
             print("[CENTRAL] Service discovered : " + service.uuid.uuidString)
             
-            peripheral.discoverCharacteristics([TransferService.characteristicUUID], for: service)
+            peripheral.discoverCharacteristics([TransferService.characteristicUUID_B], for: service)
         }
     }
     
@@ -455,7 +455,7 @@ extension Central: CBPeripheralDelegate {
         
         // Again, we loop through the array, just in case and check if it's the right one
         guard let serviceCharacteristics = service.characteristics else { return }
-        for characteristic in serviceCharacteristics where characteristic.uuid == TransferService.characteristicUUID {
+        for characteristic in serviceCharacteristics where characteristic.uuid == TransferService.characteristicUUID_A {
             // If it is, subscribe to it
             transferCharacteristic = characteristic
             peripheral.setNotifyValue(true, for: characteristic)
@@ -508,7 +508,7 @@ extension Central: CBPeripheralDelegate {
         }
         
         // Exit if it's not the transfer characteristic
-        guard characteristic.uuid == TransferService.characteristicUUID else { return }
+        guard characteristic.uuid == TransferService.characteristicUUID_A else { return }
         
         if characteristic.isNotifying {
             // Notification has started
