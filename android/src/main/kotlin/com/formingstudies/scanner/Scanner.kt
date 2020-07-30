@@ -49,7 +49,7 @@ class Scanner {
         }
     }
 
-    suspend fun connect(context: Context, device: BluetoothDevice) = GlobalScope.launch {
+    fun connect(context: Context, device: BluetoothDevice) = GlobalScope.launch {
         val gatt = device.connectGatt(context, autoConnect = false).let { result ->
             when (result) {
                 is ConnectGattResult.Success -> result.gatt
