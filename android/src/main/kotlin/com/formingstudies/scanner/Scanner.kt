@@ -73,30 +73,6 @@ class Scanner {
                 mLog.i(TAG, "ELSE CASE")
             }
         }
-
-        val characteristics = gatt.getService(serviceUuid)?.getCharacteristics()
-        if (characteristics != null) {
-            for (char in characteristics) {
-                mLog.i(TAG, char.uuid.toString())
-            }
-        }
-
-        /*
-        val txPower = gatt.getService(serviceUuid)?.getCharacteristic(0x1804)
-        val txPowerResult = txPower?.let { gatt.readCharacteristic(it) }
-        if (txPowerResult != null) {
-            if (txPowerResult.status == BluetoothGatt.GATT_SUCCESS) {
-                mLog.i(TAG, "txPowerResult.value = ${String(result.value, Charsets.UTF_8)}")
-            } else {
-                // read characteristic failed
-                mLog.i(TAG, "txPower ELSE CASE")
-            }
-        }
-         */
-
-
-
-
         gatt.disconnect()
         gatt.close()
     }
@@ -139,6 +115,9 @@ class Scanner {
                     discoveredDevices.add(result.device.toString())
                     mLog.i(TAG, result?.toString());
                     context?.let { connect(it, result.device) }
+                } else {
+                    val message = "KNOWN DEVICE : " + result?.toString()
+                    mLog.i(TAG, message);
                 }
             } catch(err: Exception) {
                 mLog.e(TAG, err.toString())
