@@ -159,11 +159,17 @@ class Peripheral : NSObject {
             for service in services {
                 let cbuuid = CBUUID(string:service["serviceUuid"] as! String)
                 // Start with the CBMutableCharacteristic.
-                let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID,
+                /*
+                let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID_A,
                                                                      properties: [.notify, .writeWithoutResponse],
                                                                      value: nil,
                                                                      permissions: [.readable, .writeable])
-                
+                */
+                let transferCharacteristic = CBMutableCharacteristic(type: TransferService.characteristicUUID_B,
+                                                                     properties: [.read],
+                                                                     value: "Hello Hank READ FROM iOS".data(using: .utf8)!,
+                                                                     permissions: [.readable])
+
                 // Create a service from the characteristic.
                 let transferService = CBMutableService(type: cbuuid, primary: true)
                 
@@ -196,7 +202,7 @@ extension Peripheral : CBPeripheralManagerDelegate {
      */
     internal func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         if (peripheral.state == .poweredOn && shouldStartAdvertise &&  dataToBeAdvertised != nil) {
-            print("[PERIPHERAL] Start advertising ... %@", dataToBeAdvertised)
+            print("[PERIPHERAL] Start advertising ... %@", dataToBeAdvertised!)
             if(!peripheralSetUp) {
                 print("[PERIPHERAL] Peripheral SET UP ...")
                 setupPeripheral()
@@ -258,7 +264,7 @@ extension Peripheral : CBPeripheralManagerDelegate {
         print("[PERIPHERAL] Central subscribed to characteristic")
         
         // Get the data
-        dataToSend = "Hello Hank from PERIPHERAL!".data(using: .utf8)!
+        dataToSend = "Hello Hank from PERIPHERAL CHAR B!".data(using: .utf8)!
         
         // Reset the index
         sendDataIndex = 0
