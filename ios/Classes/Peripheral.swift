@@ -9,8 +9,7 @@ class Peripheral : NSObject {
     var peripheralManager: CBPeripheralManager!
     var shouldStartAdvertise: Bool = false
     private var advertiseParams: Dictionary<String, Any>!
-    private var dataToBeAdvertised: [String: Array<String>]!
-//    private var dataToBeAdvertised: [String: [CBUUID]]!
+    private var dataToBeAdvertised: [String: [CBUUID]]!
     private var peripheralSetUp: Bool = false
     private var isInBackground: Bool = false
     
@@ -29,15 +28,12 @@ class Peripheral : NSObject {
         print("[PERIPHERAL] Start Advertising Called")
         let serviceUuids = params["uuids"] as! Array<String>
         // peripheralManager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: serviceUuids])
+        let cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
+            return CBUUID(string: uuid);
+        })
         dataToBeAdvertised = [
-            CBAdvertisementDataServiceUUIDsKey : serviceUuids,
+            CBAdvertisementDataServiceUUIDsKey : cbuuids,
         ]
-//        let cbuuids = serviceUuids.map({ (uuid) -> CBUUID in
-//            return CBUUID(string: uuid);
-//        })
-//        dataToBeAdvertised = [
-//            CBAdvertisementDataServiceUUIDsKey : cbuuids,
-//        ]
         
         var services: [Dictionary<String, Any>] = []
         for serviceUuid in serviceUuids {
