@@ -22,7 +22,6 @@ import android.util.Log as mLog
 import com.juul.able.experimental.ConnectGattResult
 import com.juul.able.experimental.android.connectGatt
 import com.juul.able.experimental.toUuid
-import com.juul.able.experimental.Device
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -49,27 +48,6 @@ class Scanner {
         this.context = context
         if (mBluetoothLeScanner == null) {
             mBluetoothLeScanner = (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
-        }
-    }
-
-    fun connectAndReadEveryMinute(
-            context: Context,
-            bluetoothDevice: BluetoothDevice,
-            characteristic: BluetoothGattCharacteristic
-    ): Job = launch {
-        while (isActive) {
-            bluetoothDevice.connect(context)
-            bluetoothDevice.discoverServices()
-
-            val value = bluetoothDevice.readCharacteristic(characteristic).value
-
-            try {
-                bluetoothDevice.disconnect()
-            } finally {
-                bluetoothDevice.close()
-            }
-
-            delay(60_000L)
         }
     }
 
