@@ -11,8 +11,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  log_4_dart_2: ^0.4.0
-
 
 dev_dependencies:
   flutter_test:
